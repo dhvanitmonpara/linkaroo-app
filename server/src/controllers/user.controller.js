@@ -71,11 +71,11 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 
     if (!user) {
         return res
-            .status(401)
+            .status(404)
             .json(new ApiResponse(
-                401,
+                404,
                 user,
-                "Unauthorized request"
+                "User not found"
             ))
     }
 

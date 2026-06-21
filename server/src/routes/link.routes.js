@@ -8,10 +8,12 @@ import {
     moveLinkFromInbox,
     createLinkWithMetadata
 } from "../controllers/link.controller.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router()
 
 // secure routes
+router.use(verifyJWT)
 router.route("/:collectionId")
     .post(createLink)
     .get(getLinksByCollection)

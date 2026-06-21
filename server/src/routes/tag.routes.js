@@ -10,10 +10,12 @@ import {
     renameTag,
     customizeCollectionTag
 } from "../controllers/tag.controller.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router()
 
 // secure routes
+router.use(verifyJWT)
 router.route("/").post(createTag)
 
 router.route("/get/collections/:collectionId").get(getTagsByCollection)

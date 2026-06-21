@@ -18,10 +18,12 @@ import {
     getCollectionByName
 } from "../controllers/collection.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router()
 
 // secure routes
+router.use(verifyJWT)
 router.route("/").post(createCollection)
 
 router.route("/u/:collectionId").get(getCollectionById)
