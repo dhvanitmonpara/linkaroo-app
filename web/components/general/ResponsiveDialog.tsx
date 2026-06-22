@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +22,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+
 import { useEffect, useState } from "react";
 
 function useIsDesktop() {
@@ -93,7 +93,7 @@ function ResponsiveDialog({
         }}
         {...props}
       >
-        <DialogTrigger asChild>{trigger}</DialogTrigger>
+        <DialogTrigger render={React.isValidElement(trigger) ? trigger : <span />}>{trigger}</DialogTrigger>
         <DialogContent
           className={`sm:max-w-[27.2rem] md:max-w-96 ${className}`}
           showCloseButton={showCloseButton && prebuildForm}
@@ -104,12 +104,12 @@ function ResponsiveDialog({
               <DialogDescription>{description}</DialogDescription>
             </div>
           ) : (
-            <VisuallyHidden>
+            <div className="sr-only">
               <DialogHeader>
                 <DialogTitle>{title}</DialogTitle>
                 <DialogDescription>{description}</DialogDescription>
               </DialogHeader>
-            </VisuallyHidden>
+            </div>
           )}
           {children}
         </DialogContent>

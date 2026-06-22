@@ -10,8 +10,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTrigger,
+  DialogTitle,
 } from "@/components/ui/dialog";
-import { DialogTitle } from "@radix-ui/react-dialog";
 import { ReactNode, useState } from "react";
 import ProfileForm from "@/components/Forms/ProfileForm";
 import FeedbackForm from "@/components/Forms/FeedbackForm";

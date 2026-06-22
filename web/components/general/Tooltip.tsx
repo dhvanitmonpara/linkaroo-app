@@ -24,7 +24,7 @@ function TooltipContainer({
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger className={className} asChild>
+        <TooltipTrigger className={className} render={React.isValidElement(children) ? children : <span />}>
           {children}
         </TooltipTrigger>
         <TooltipContent side={side} className={wrapping ? "max-w-40 text-wrap" : ""}>

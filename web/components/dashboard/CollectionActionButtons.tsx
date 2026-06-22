@@ -416,7 +416,7 @@ const DeleteCollectionButton = () => {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger className="hidden md:flex" asChild>
+        <DropdownMenuTrigger className="hidden md:flex" render={<div />}>
           <div
             className="h-12 w-12 bg-transparent hover:bg-transparent border-none flex justify-center items-center rounded-full text-xl"
             aria-label="Tag Options"
@@ -542,7 +542,7 @@ const ToggleIsPublicButton = () => {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger className="hidden md:flex" asChild>
+        <DropdownMenuTrigger className="hidden md:flex" render={<div />}>
           <div
             className="h-12 w-12 bg-transparent hover:bg-transparent border-none flex justify-center items-center rounded-full text-xl"
             aria-label="Tag Options"
