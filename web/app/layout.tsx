@@ -4,6 +4,7 @@ import { Toaster } from "react-hot-toast";
 
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { FontProvider } from "@/components/font-provider";
 import { cn } from "@/lib/utils";
 
 import { ClerkAxiosInterceptor } from "@/components/ClerkAxiosInterceptor";
@@ -23,15 +24,17 @@ export default function RootLayout({
         suppressHydrationWarning
         className={cn("antialiased", inter.variable, poppins.variable, "font-sans")}
       >
-        <body className="relative min-h-screen antialiased selection:bg-primary/30">
+        <body className="relative min-h-screen antialiased selection:bg-primary/30 transition-all duration-300">
           <ThemeProvider>
-            <ClerkAxiosInterceptor>
-              <div className="fixed inset-0 -z-10 h-full w-full bg-background bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]">
-                <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-primary/30 opacity-50 blur-[100px]"></div>
-              </div>
-              {children}
-              <Toaster position="bottom-right" reverseOrder={false} />
-            </ClerkAxiosInterceptor>
+            <FontProvider>
+              <ClerkAxiosInterceptor>
+                <div className="fixed inset-0 -z-10 h-full w-full bg-background bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]">
+                  <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-primary/30 opacity-50 blur-[100px]"></div>
+                </div>
+                {children}
+                <Toaster position="bottom-right" reverseOrder={false} />
+              </ClerkAxiosInterceptor>
+            </FontProvider>
           </ThemeProvider>
         </body>
       </html>
