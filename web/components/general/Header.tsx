@@ -55,13 +55,13 @@ const Header = () => {
           <span className="hidden sm:inline">Linkaroo</span>
         </Link>
         <div className="lg:h-20 h-[4.5rem] lg:py-5 pt-4 pb-[1rem] flex space-x-2 md:w-2/5">
-          <div className="w-full relative hidden md:inline-block">
+          <div className="w-full relative hidden md:inline-block h-full">
             <Input
               onClick={() => setOpen(true)}
-              className="dark:bg-zinc-800/60 dark:text-white dark:border-zinc-700/80"
+              className="dark:bg-zinc-800/60 dark:text-white dark:border-zinc-700/80 h-full"
               placeholder="Create or Search something..."
             />
-            <div className="absolute top-2 right-2 border-1 bg-zinc-900 border-zinc-700/80 text-zinc-300 w-fit py-1 px-2 text-xs rounded-md">
+            <div className="absolute top-1/2 -translate-y-1/2 right-2 border-1 bg-zinc-900 border-zinc-700/80 text-zinc-300 w-fit py-1 px-2 text-xs rounded-md">
               ⌘K
             </div>
           </div>

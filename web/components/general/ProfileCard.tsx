@@ -38,8 +38,8 @@ const ProfileCard = () => {
           alt="Profile pic"
         />
       </PopoverTrigger>
-      <PopoverContent className="dark:bg-black dark:text-white dark:border-zinc-800 !w-64 space-y-1 p-2 mt-1">
-        <div className="flex justify-start items-center select-none cursor-pointer px-3 py-3 bg-zinc-800/70 hover:bg-zinc-800 rounded-sm">
+      <PopoverContent className="!w-64 p-1 mt-1">
+        <div className="flex justify-start items-center select-none cursor-pointer px-2 py-1.5 mb-1 bg-transparent hover:bg-accent hover:text-accent-foreground rounded-sm transition-colors">
           <img
             className="rounded-full h-10 w-10 object-cover"
             src={user?.imageUrl}
@@ -122,7 +122,7 @@ const DialogContainer = ({
 }) => {
   return (
     <Dialog onOpenChange={(v) => onClose && onClose(v)}>
-      <DialogTrigger className="p-3 text-sm text-start bg-zinc-800/70 hover:bg-zinc-800 w-full rounded-sm cursor-pointer">
+      <DialogTrigger className="px-2 py-1.5 text-sm text-start bg-transparent hover:bg-accent hover:text-accent-foreground w-full rounded-sm cursor-pointer outline-none transition-colors">
         {trigger}
       </DialogTrigger>
       <DialogContent aria-hidden className="sm:max-w-96">
