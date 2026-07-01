@@ -5,7 +5,7 @@ import { Collection } from "../models/collection.model.js"
 import { Link, UserLink } from "../models/link.model.js"
 import axios from "axios"
 import validator from "validator"
-import fetchMetadata from "../utils/fetchMetadata.js"
+import fetchMetadata, { detectContentType } from "../utils/fetchMetadata.js"
 import convertToObjectId from "../utils/convertToObjectId.js"
 
 const createLink = asyncHandler(async (req, res) => {
@@ -53,11 +53,13 @@ const createLink = asyncHandler(async (req, res) => {
             existingLinkId = existingLink._id;
         } else {
             // Create new link if it doesn't exist
+            const contentType = detectContentType(link);
             const newLink = await Link.create({
                 title,
                 description: description || "",
                 link,
                 image,
+                contentType,
             });
 
             if (!newLink) throw new ApiError(500, "Failed to create link.");
@@ -94,7 +96,8 @@ const createLink = asyncHandler(async (req, res) => {
         collectionId: collectionId,
         link: link,
         image: image,
-        isChecked: false
+        isChecked: false,
+        contentType: detectContentType(link),
     }
 
     return res.status(201).json(new ApiResponse(201, { data: customLink, isLinkReachable }, "Link created successfully"));
@@ -124,6 +127,7 @@ const createLinkWithMetadata = asyncHandler(async (req, res) => {
     const title = metadata?.title || "Untitled Link";
     const description = metadata?.description || "";
     const image = metadata?.image || null;
+    const contentType = metadata?.contentType || 'link';
 
     // Check if link already exists (shared among users)
     let existingLink = await Link.findOne({ link });
@@ -135,6 +139,7 @@ const createLinkWithMetadata = asyncHandler(async (req, res) => {
             description,
             link,
             image,
+            contentType,
         });
 
         if (!existingLink) {
@@ -181,7 +186,7 @@ const getLinksByCollection = asyncHandler(async (req, res) => {
         .find({ collectionId: collectionIdObject })
         .populate({
             path: "linkId",
-            select: "title description link image", // Fetch only required fields
+            select: "title description link image contentType",
         })
 
     if (userLinks.length === 0) {
@@ -189,6 +194,24 @@ const getLinksByCollection = asyncHandler(async (req, res) => {
     }
 
     return res.status(200).json(new ApiResponse(200, userLinks, "Links retrieved successfully"));
+});
+
+const getAllLinks = asyncHandler(async (req, res) => {
+    const userId = req.user?._id;
+
+    if (!userId) {
+        throw new ApiError(401, "Unauthorized");
+    }
+
+    const userLinks = await UserLink
+        .find({ userId: userId })
+        .populate({
+            path: "linkId",
+            select: "title description link image contentType",
+        })
+        .sort({ createdAt: -1 });
+
+    return res.status(200).json(new ApiResponse(200, userLinks, "All links retrieved successfully"));
 });
 
 const updateLink = asyncHandler(async (req, res) => {
@@ -328,4 +351,4 @@ const moveLinkFromInbox = asyncHandler(async (req, res) => {
         ))
 })
 
-export { createLink, createLinkWithMetadata, getLinksByCollection, updateLink, deleteLink, toggleIsChecked, moveLinkFromInbox }
+export { createLink, createLinkWithMetadata, getLinksByCollection, getAllLinks, updateLink, deleteLink, toggleIsChecked, moveLinkFromInbox }

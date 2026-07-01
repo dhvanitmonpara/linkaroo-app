@@ -6,6 +6,10 @@ import {
 import { create } from "zustand";
 
 interface linkState {
+  allLinks: fetchedLinkType[] | [];
+  setAllLinks: (links: fetchedLinkType[]) => void;
+  addAllLinkItem: (item: fetchedLinkType) => void;
+  removeAllLinkItem: (linkId: string) => void;
   cachedLinks: cachedLinks[] | [];
   setCachedLinks: (links: cachedLinks[]) => void;
   addCachedLinkCollection: (item: cachedLinks) => void;
@@ -24,6 +28,16 @@ interface linkState {
 }
 
 const useLinkStore = create<linkState>((set) => ({
+  allLinks: [],
+  setAllLinks: (links) => set({ allLinks: links }),
+  addAllLinkItem: (item) => {
+    set((state) => ({ allLinks: [item, ...state.allLinks] }));
+  },
+  removeAllLinkItem: (linkId) => {
+    set((state) => ({
+      allLinks: state.allLinks.filter((link) => link._id !== linkId),
+    }));
+  },
   cachedLinks: [],
   setCachedLinks: (lists) => set({ cachedLinks: lists }),
   addCachedLinkCollection: (list) => {

@@ -87,6 +87,8 @@ function LinkMapper() {
                   key={link._id}
                   id={link._id}
                   title={link.title}
+                  description={link.description}
+                  createdAt={link.createdAt}
                   color={currentCardColor}
                   image={link.image}
                   type={itemType}

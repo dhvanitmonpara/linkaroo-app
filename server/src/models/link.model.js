@@ -1,10 +1,16 @@
 import mongoose, { Schema } from "mongoose";
 
+const CONTENT_TYPES = [
+    'youtube', 'twitter', 'github', 'instagram',
+    'image', 'audio', 'article', 'book', 'movie', 'product', 'link'
+];
+
 const linkSchema = new Schema({
     title: { type: String, required: true },
     description: { type: String },
     image: { type: String, default: null },
-    link: { type: String, required: true, unique: true }
+    link: { type: String, required: true, unique: true },
+    contentType: { type: String, enum: CONTENT_TYPES, default: 'link' },
 }, { timestamps: true });
 
 export const Link = mongoose.model("Link", linkSchema)

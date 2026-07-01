@@ -20,6 +20,7 @@ import useAuthStore from '@/store/authStore';
 import useCollectionsStore from '@/store/collectionStore';
 import useLinkStore from '@/store/linkStore';
 import api from '@/lib/api';
+import { formatLinksForMobile } from '@/lib/formatLinks';
 import { colorMap, fetchedLinkType } from '@/types';
 
 export default function CollectionDetailScreen() {
@@ -46,10 +47,15 @@ export default function CollectionDetailScreen() {
           setLoading(true);
           const res = await api.get(`/links/collection/${id}`);
           if (res.status === 200) {
-            setCachedLinks(id, res.data.data ?? []);
+            setCachedLinks(id, formatLinksForMobile(res.data.data ?? []));
           }
         } catch (err: any) {
-          console.error('Failed to load links', err.message);
+          if (err?.response?.status === 404) {
+            // 404 = no links yet — treat as empty, not an error
+            setCachedLinks(id, []);
+          } else {
+            console.error('Failed to load links', err.message);
+          }
         } finally {
           setLoading(false);
         }
@@ -81,6 +87,7 @@ export default function CollectionDetailScreen() {
           image: res.data.data.link.image,
           isChecked: userLink.isChecked,
           __v: userLink.__v,
+          contentType: res.data.data.link.contentType ?? 'link',
         };
         addCachedLinkItem(id, formatted);
       }

@@ -70,6 +70,19 @@ type fetchedTagType = {
   updatedAt: string;
 };
 
+type ContentType =
+  | 'youtube'
+  | 'twitter'
+  | 'github'
+  | 'instagram'
+  | 'image'
+  | 'audio'
+  | 'article'
+  | 'book'
+  | 'movie'
+  | 'product'
+  | 'link';
+
 type fetchedLinkType = {
   _id: string;
   title: string;
@@ -82,6 +95,7 @@ type fetchedLinkType = {
   isChecked: boolean;
   updatedAt: string;
   __v: number;
+  contentType?: ContentType;
 };
 
 type fetchedCollectionType = {
@@ -127,4 +141,5 @@ export type {
   cachedLinks,
   CollectionType,
   NotificationType,
+  ContentType,
 };

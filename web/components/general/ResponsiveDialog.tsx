@@ -96,20 +96,22 @@ function ResponsiveDialog({
         }}
         {...props}
       >
-        <DialogTrigger
-          render={(triggerProps: any) =>
-            React.isValidElement(trigger) ? (
-              React.cloneElement(trigger as React.ReactElement<any>, {
-                ...triggerProps,
-                type: "button",
-              })
-            ) : (
-              <button type="button" {...triggerProps}>
-                {trigger}
-              </button>
-            )
-          }
-        />
+        {React.isValidElement(trigger) ? (
+          React.cloneElement(trigger as React.ReactElement<any>, {
+            onClick: (e: any) => {
+              handleOpenChange(true);
+              if ((trigger.props as any).onClick) {
+                (trigger.props as any).onClick(e);
+              }
+            },
+            "aria-haspopup": "dialog",
+            "aria-expanded": isOpen,
+          })
+        ) : (
+          <button type="button" onClick={() => handleOpenChange(true)} aria-haspopup="dialog" aria-expanded={isOpen}>
+            {trigger}
+          </button>
+        )}
 
         <DialogContent
           className={`sm:max-w-[27.2rem] md:max-w-96 ${className}`}

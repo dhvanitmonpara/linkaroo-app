@@ -1,7 +1,7 @@
 "use client";
 
 import { LinkCard } from "@/components/dashboard";
-import { fetchedCollectionType } from "@/lib/types";
+import { colorOptions, fetchedCollectionType } from "@/lib/types";
 import useCollectionsStore from "@/store/collectionStore";
 import useProfileStore from "@/store/profileStore";
 import formatLinks from "@/utils/formatLinks";
@@ -102,9 +102,11 @@ const InboxPage = () => {
               key={link._id}
               id={link._id}
               title={link.title}
+              description={link.description}
+              createdAt={link.createdAt}
+              color={inbox?.theme as colorOptions}
               image={link.image}
               type="todos"
-              color="bg-black"
               link={link.link}
               isChecked={link.isChecked}
             />

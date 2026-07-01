@@ -6,7 +6,8 @@ import {
     deleteLink,
     toggleIsChecked,
     moveLinkFromInbox,
-    createLinkWithMetadata
+    createLinkWithMetadata,
+    getAllLinks
 } from "../controllers/link.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -14,6 +15,9 @@ const router = Router()
 
 // secure routes
 router.use(verifyJWT)
+
+router.route("/all").get(getAllLinks)
+
 router.route("/:collectionId")
     .post(createLink)
     .get(getLinksByCollection)

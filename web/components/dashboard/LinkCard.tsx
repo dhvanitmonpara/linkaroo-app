@@ -30,6 +30,7 @@ import {
 import CustomCheckbox from "@/components/ui/CustomCheckbox";
 import { Checkbox } from "@/components/ui/checkbox";
 import { usePathname } from "next/navigation";
+import React from "react";
 
 type LinkCardProps = {
   id: string;
@@ -39,6 +40,8 @@ type LinkCardProps = {
   image: string | null;
   type: "banners" | "cards" | "todos";
   isChecked: boolean;
+  description?: string;
+  createdAt?: string;
 };
 
 const LinkCard = ({
@@ -49,9 +52,12 @@ const LinkCard = ({
   image,
   type,
   isChecked,
+  description,
+  createdAt,
 }: LinkCardProps) => {
-  const { addCachedLinkItem, toggleIsChecked } = useLinkStore();
+  const { addCachedLinkItem, toggleIsChecked, removeAllLinkItem, removeLinkItem } = useLinkStore();
   const { collections, removeInboxLinkItem } = useCollectionsStore();
+  const [isDeleting, setIsDeleting] = React.useState(false);
   const pathname = usePathname();
 
   const openLink = (e: React.MouseEvent<HTMLSpanElement, MouseEvent>) => {
@@ -102,11 +108,34 @@ const LinkCard = ({
     }
   };
 
+  const deleteLinkHandler = async () => {
+    try {
+      setIsDeleting(true);
+      const res = await axios.delete(
+        `${process.env.NEXT_PUBLIC_SERVER_API_URL}/links/${id}`,
+        { withCredentials: true }
+      );
+      if (res.status === 200) {
+        toast.success("Link deleted successfully");
+        removeAllLinkItem(id);
+        removeLinkItem(id);
+        removeInboxLinkItem(id);
+      }
+    } catch (error) {
+      toast.error("Failed to delete link");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <ContextMenu>
       <ContextMenuTrigger>
         <Dialog>
-          <DialogTrigger className={cardClass}>
+          <DialogTrigger
+            nativeButton={false}
+            render={(props) => <div {...props} className={cardClass} />}
+          >
             {type === "todos" && (
               <h2
                 className={`font-semibold decoration-2 cursor-pointer text-lg flex justify-start items-center w-full space-x-6`}
@@ -167,16 +196,12 @@ const LinkCard = ({
               <div
                 className={`font-semibold decoration-2 cursor-pointer text-lg flex flex-col justify-start items-center w-full space-y-4`}
               >
-                {image ? (
+                {image && (
                   <img
                     src={image}
                     alt={title}
                     className={`w-full object-cover`}
                   />
-                ) : (
-                  <div className="h-full w-full flex justify-center items-center">
-                    <p>No banner found</p>
-                  </div>
                 )}
                 <h2 className="w-full text-start flex justify-between items-center space-x-2">
                   <span>{title}</span>
@@ -198,12 +223,56 @@ const LinkCard = ({
               </div>
             )}
           </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{title}</DialogTitle>
-              <DialogDescription>{link}</DialogDescription>
-            </DialogHeader>
-            <p>Hello</p>
+          <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
+            <div className="flex flex-col gap-6">
+              {/* Image Banner */}
+              {image && (
+                <div className="w-full h-48 md:h-64 rounded-xl overflow-hidden relative border border-zinc-200 dark:border-zinc-800">
+                  <img src={image} alt={title} className="w-full h-full object-cover" />
+                </div>
+              )}
+
+              <DialogHeader className="text-left space-y-3">
+                <DialogTitle className="text-2xl font-bold leading-tight">{title}</DialogTitle>
+                <div className="flex items-center space-x-2 text-sm text-zinc-500">
+                  {createdAt && <span>Added {new Date(createdAt).toLocaleDateString()}</span>}
+                </div>
+              </DialogHeader>
+
+              {/* Description */}
+              {description && (
+                <div className="text-zinc-700 dark:text-zinc-300 text-sm md:text-base leading-relaxed bg-zinc-50 dark:bg-zinc-900 p-4 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                  {description}
+                </div>
+              )}
+
+              {/* Link Box */}
+              <div className="flex items-center justify-between p-4 bg-zinc-100 dark:bg-black rounded-xl border border-zinc-200 dark:border-zinc-800">
+                <div className="overflow-hidden whitespace-nowrap overflow-ellipsis mr-4">
+                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-1">Source URL</p>
+                  <a href={link} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline text-sm truncate block">
+                    {link}
+                  </a>
+                </div>
+                <button
+                  onClick={openLink}
+                  className="shrink-0 flex items-center justify-center h-10 w-10 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-full hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  <FiArrowUpRight className="text-lg" />
+                </button>
+              </div>
+
+              {/* Actions */}
+              <div className="pt-4 flex justify-between items-center border-t border-zinc-100 dark:border-zinc-800 mt-2">
+                <button
+                  disabled={isDeleting}
+                  onClick={deleteLinkHandler}
+                  className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors flex items-center gap-2"
+                >
+                  {isDeleting ? "Deleting..." : "Delete Link"}
+                </button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </ContextMenuTrigger>

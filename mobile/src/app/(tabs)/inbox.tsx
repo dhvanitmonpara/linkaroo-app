@@ -18,6 +18,7 @@ import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import useAuthStore from '@/store/authStore';
 import useCollectionsStore from '@/store/collectionStore';
 import api from '@/lib/api';
+import { formatLinksForMobile } from '@/lib/formatLinks';
 import { fetchedCollectionType, fetchedLinkType } from '@/types';
 
 export default function InboxScreen() {
@@ -43,16 +44,27 @@ export default function InboxScreen() {
               const inboxCol = all.find((c) => c.isInbox) ?? null;
               setInbox(inboxCol);
               if (inboxCol) {
-                const linksRes = await api.get(`/links/collection/${inboxCol._id}`);
-                if (linksRes.status === 200) {
-                  setInboxLinks(linksRes.data.data ?? []);
+                try {
+                  const linksRes = await api.get(`/links/collection/${inboxCol._id}`);
+                  if (linksRes.status === 200) {
+                    setInboxLinks(formatLinksForMobile(linksRes.data.data ?? []));
+                  }
+                } catch (linkErr: any) {
+                  // 404 just means empty collection — not an error
+                  if (linkErr?.response?.status !== 404) throw linkErr;
+                  setInboxLinks([]);
                 }
               }
             }
           } else if (inboxLinks.length === 0) {
-            const linksRes = await api.get(`/links/collection/${inbox._id}`);
-            if (linksRes.status === 200) {
-              setInboxLinks(linksRes.data.data ?? []);
+            try {
+              const linksRes = await api.get(`/links/collection/${inbox._id}`);
+              if (linksRes.status === 200) {
+                setInboxLinks(formatLinksForMobile(linksRes.data.data ?? []));
+              }
+            } catch (linkErr: any) {
+              if (linkErr?.response?.status !== 404) throw linkErr;
+              setInboxLinks([]);
             }
           }
         } catch (err: any) {
@@ -89,6 +101,7 @@ export default function InboxScreen() {
           image: res.data.data.link.image,
           isChecked: userLink.isChecked,
           __v: userLink.__v,
+          contentType: res.data.data.link.contentType ?? res.data.data.data?.contentType ?? 'link',
         };
         addInboxLinkItem(formatted);
       }
