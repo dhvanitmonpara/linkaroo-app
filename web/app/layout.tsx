@@ -1,5 +1,5 @@
 import { ClerkProvider } from "@clerk/nextjs";
-import { Inter, Poppins } from "next/font/google";
+import { Inter, Poppins, Geist } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 
 import "./globals.css";
@@ -8,6 +8,8 @@ import { FontProvider } from "@/components/font-provider";
 import { cn } from "@/lib/utils";
 
 import { ClerkAxiosInterceptor } from "@/components/ClerkAxiosInterceptor";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const poppins = Poppins({ weight: ["400", "500", "600", "700"], subsets: ["latin"], variable: "--font-poppins" });
@@ -22,7 +24,7 @@ export default function RootLayout({
       <html
         lang="en"
         suppressHydrationWarning
-        className={cn("antialiased", inter.variable, poppins.variable, "font-sans")}
+        className={cn("antialiased", inter.variable, poppins.variable, "font-sans", geist.variable)}
       >
         <body className="relative min-h-screen antialiased selection:bg-primary/30 transition-all duration-300">
           <ThemeProvider>

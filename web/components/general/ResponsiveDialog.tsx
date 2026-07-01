@@ -30,9 +30,13 @@ function useIsDesktop() {
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)");
+
     setIsDesktop(mq.matches);
+
     const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+
     mq.addEventListener("change", handler);
+
     return () => mq.removeEventListener("change", handler);
   }, []);
 
@@ -75,13 +79,23 @@ function ResponsiveDialog({
   const [open, setOpen] = React.useState(defaultOpen);
   const isDesktop = useIsDesktop();
 
-  // Determine the open state and setState function
   const isOpen = explicitStates?.isOpen ?? open;
   const setIsOpen = explicitStates?.setIsOpen ?? setOpen;
 
   const handleOpenChange = (state: boolean) => {
     setIsOpen(state);
   };
+
+  const dialogTrigger =
+    React.isValidElement(trigger)
+      ? React.cloneElement(trigger as React.ReactElement<any>, {
+        type: "button",
+      })
+      : (
+        <button type="button">
+          {trigger}
+        </button>
+      );
 
   if (isDesktop) {
     return (
@@ -93,7 +107,8 @@ function ResponsiveDialog({
         }}
         {...props}
       >
-        <DialogTrigger render={React.isValidElement(trigger) ? trigger : <span />}>{trigger}</DialogTrigger>
+        <DialogTrigger render={dialogTrigger} nativeButton={false} />
+
         <DialogContent
           className={`sm:max-w-[27.2rem] md:max-w-96 ${className}`}
           showCloseButton={showCloseButton && prebuildForm}
@@ -111,6 +126,7 @@ function ResponsiveDialog({
               </DialogHeader>
             </div>
           )}
+
           {children}
         </DialogContent>
       </Dialog>
@@ -118,22 +134,41 @@ function ResponsiveDialog({
   }
 
   return (
-    <Drawer open={isOpen} onOpenChange={handleOpenChange}>
-      <DrawerTrigger className={triggerStyling} asChild>
-        {trigger}
+    <Drawer
+      open={isOpen}
+      onOpenChange={handleOpenChange}
+    >
+      <DrawerTrigger asChild>
+        {React.isValidElement(trigger) ? (
+          React.cloneElement(trigger as React.ReactElement<any>, {
+            type: "button",
+            className: triggerStyling,
+          })
+        ) : (
+          <Button className={triggerStyling} type="button">
+            {trigger}
+          </Button>
+        )}
       </DrawerTrigger>
-      <DrawerContent className={`dark:bg-zinc-900/90 mx-auto border-none sm:max-w-96 ${className}`}>
+
+      <DrawerContent
+        className={`dark:bg-zinc-900/90 mx-auto border-none sm:max-w-96 ${className}`}
+      >
         {prebuildForm && (
           <DrawerHeader className={`text-left px-0 pt-6 ${headerStyling}`}>
             <DrawerTitle>{title}</DrawerTitle>
             <DrawerDescription>{description}</DrawerDescription>
           </DrawerHeader>
         )}
+
         {children}
+
         {showCloseButton && (
           <DrawerFooter className="pt-2">
             <DrawerClose asChild>
-              <Button variant="ghost">{cancelText}</Button>
+              <Button variant="ghost">
+                {cancelText}
+              </Button>
             </DrawerClose>
           </DrawerFooter>
         )}
