@@ -86,17 +86,6 @@ function ResponsiveDialog({
     setIsOpen(state);
   };
 
-  const dialogTrigger =
-    React.isValidElement(trigger)
-      ? React.cloneElement(trigger as React.ReactElement<any>, {
-        type: "button",
-      })
-      : (
-        <button type="button">
-          {trigger}
-        </button>
-      );
-
   if (isDesktop) {
     return (
       <Dialog
@@ -107,7 +96,20 @@ function ResponsiveDialog({
         }}
         {...props}
       >
-        <DialogTrigger render={dialogTrigger} nativeButton={false} />
+        <DialogTrigger
+          render={(triggerProps: any) =>
+            React.isValidElement(trigger) ? (
+              React.cloneElement(trigger as React.ReactElement<any>, {
+                ...triggerProps,
+                type: "button",
+              })
+            ) : (
+              <button type="button" {...triggerProps}>
+                {trigger}
+              </button>
+            )
+          }
+        />
 
         <DialogContent
           className={`sm:max-w-[27.2rem] md:max-w-96 ${className}`}
