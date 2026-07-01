@@ -115,29 +115,49 @@ const createLinkWithMetadata = asyncHandler(async (req, res) => {
     if (!userId) throw new ApiError(400, "User ID is required.");
     if (!link) throw new ApiError(400, "Link is required.");
 
-    // Fetch metadata
-    let metadata;
+    // Check if it's a valid URL
+    let isValidUrl = false;
     try {
-        metadata = await fetchMetadata(link);
-    } catch (error) {
-        console.error("Error fetching metadata:", error);
-        throw new ApiError(500, "Failed to fetch metadata.");
+        new URL(link);
+        isValidUrl = true;
+    } catch (e) {
+        // Not a valid URL, treat as a note
     }
 
-    const title = metadata?.title || "Untitled Link";
-    const description = metadata?.description || "";
-    const image = metadata?.image || null;
-    const contentType = metadata?.contentType || 'link';
+    let title, description, image, contentType, uniqueLinkStr;
+
+    if (isValidUrl) {
+        // Fetch metadata
+        let metadata;
+        try {
+            metadata = await fetchMetadata(link);
+        } catch (error) {
+            console.error("Error fetching metadata:", error);
+            throw new ApiError(500, "Failed to fetch metadata.");
+        }
+
+        title = metadata?.title || "Untitled Link";
+        description = metadata?.description || "";
+        image = metadata?.image || null;
+        contentType = metadata?.contentType || 'link';
+        uniqueLinkStr = link;
+    } else {
+        title = link.substring(0, 30) + (link.length > 30 ? "..." : ""); // Short title from note
+        description = link; // Full text as description
+        image = null;
+        contentType = 'note';
+        uniqueLinkStr = `note://${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    }
 
     // Check if link already exists (shared among users)
-    let existingLink = await Link.findOne({ link });
+    let existingLink = await Link.findOne({ link: uniqueLinkStr });
 
     if (!existingLink) {
         // Create the Link document if it doesn't exist
         existingLink = await Link.create({
             title,
             description,
-            link,
+            link: uniqueLinkStr,
             image,
             contentType,
         });

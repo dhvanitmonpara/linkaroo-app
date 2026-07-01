@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet, View, Image, Linking } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { useTheme } from '@/hooks/use-theme';
@@ -29,6 +29,9 @@ export function YouTubeCard({ link, onLongPress }: Props) {
     link.image ??
     (videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null);
 
+  const [imgError, setImgError] = useState(false);
+  const showBanner = thumbnailUri && !imgError;
+
   return (
     <Pressable
       onPress={open}
@@ -40,25 +43,26 @@ export function YouTubeCard({ link, onLongPress }: Props) {
       android_ripple={{ color: theme.backgroundSelected, borderless: false }}
     >
       {/* 16:9 Thumbnail */}
-      <View style={styles.thumbWrapper}>
-        {thumbnailUri ? (
-          <Image source={{ uri: thumbnailUri }} style={styles.thumbnail} resizeMode="cover" />
-        ) : (
-          <ThemedView type="backgroundSelected" style={[styles.thumbnail, styles.thumbFallback]}>
-            <ThemedText style={styles.playEmoji}>▶</ThemedText>
-          </ThemedView>
-        )}
-        {/* Play button overlay */}
-        <View style={styles.playOverlay}>
-          <View style={styles.playBtn}>
-            <ThemedText style={styles.playIcon}>▶</ThemedText>
+      {showBanner && (
+        <View style={styles.thumbWrapper}>
+          <Image 
+            source={{ uri: thumbnailUri as string }} 
+            style={styles.thumbnail} 
+            resizeMode="cover" 
+            onError={() => setImgError(true)}
+          />
+          {/* Play button overlay */}
+          <View style={styles.playOverlay}>
+            <View style={styles.playBtn}>
+              <ThemedText style={styles.playIcon}>▶</ThemedText>
+            </View>
+          </View>
+          {/* YouTube brand badge */}
+          <View style={[styles.badge, { backgroundColor: '#FF0000' }]}>
+            <ThemedText style={styles.badgeText}>YouTube</ThemedText>
           </View>
         </View>
-        {/* YouTube brand badge */}
-        <View style={[styles.badge, { backgroundColor: '#FF0000' }]}>
-          <ThemedText style={styles.badgeText}>YouTube</ThemedText>
-        </View>
-      </View>
+      )}
 
       <View style={[styles.meta, { borderTopColor: theme.border }]}>
         <ThemedText numberOfLines={2} style={styles.title}>

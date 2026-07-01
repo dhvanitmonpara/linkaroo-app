@@ -1,7 +1,7 @@
 "use client";
 
 import { colorOptions } from "@/lib/types";
-import { FiArrowUpRight } from "react-icons/fi";
+import { FiArrowUpRight, FiTrash2 } from "react-icons/fi";
 import { BiListPlus } from "react-icons/bi";
 import {
   DropdownMenu,
@@ -42,6 +42,7 @@ type LinkCardProps = {
   isChecked: boolean;
   description?: string;
   createdAt?: string;
+  contentType?: string;
 };
 
 const LinkCard = ({
@@ -54,6 +55,7 @@ const LinkCard = ({
   isChecked,
   description,
   createdAt,
+  contentType,
 }: LinkCardProps) => {
   const { addCachedLinkItem, toggleIsChecked, removeAllLinkItem, removeLinkItem } = useLinkStore();
   const { collections, removeInboxLinkItem } = useCollectionsStore();
@@ -65,7 +67,7 @@ const LinkCard = ({
     window.open(link, "_blank");
   };
 
-  const cardClass = `block w-full !text-zinc-300 select-none group relative ${type === "todos" ? "h-14 px-5 border-zinc-800 !bg-zinc-900 border-[1px] hover:!bg-zinc-800/80" : ""} flex-col transition-all duration-300 rounded-md flex justify-center items-center`;
+  const cardClass = `block w-full text-foreground select-none group relative ${type === "todos" ? "h-14 px-5 border-border bg-muted/50 border-[1px] hover:bg-muted" : "bg-muted/40 border border-border/60 shadow-sm hover:shadow-md hover:border-border hover:bg-muted/60"} flex-col transition-all duration-300 rounded-xl overflow-hidden flex justify-center items-center`;
 
   const addToListHandler = async (collectionId: string) => {
     let loaderId = "";
@@ -184,91 +186,128 @@ const LinkCard = ({
                     </DropdownMenuContent>
                   </DropdownMenu>
                 )}
-                <span
-                  onClick={openLink}
-                  className={`md:opacity-0 absolute right-6 opacity-100 hover:bg-[#b2b2b220] active:scale-95 rounded-full p-2 group-hover:opacity-100 transition-all ease-in-out duration-300`}
-                >
-                  <FiArrowUpRight />
-                </span>
+                {contentType !== 'note' && (
+                  <span
+                    onClick={openLink}
+                    className={`md:opacity-0 absolute right-6 opacity-100 hover:bg-[#b2b2b220] active:scale-95 rounded-full p-2 group-hover:opacity-100 transition-all ease-in-out duration-300`}
+                  >
+                    <FiArrowUpRight />
+                  </span>
+                )}
               </h2>
             )}
             {(type === "banners" || type === "cards") && (
               <div
-                className={`font-semibold decoration-2 cursor-pointer text-lg flex flex-col justify-start items-center w-full space-y-4`}
+                className={`font-semibold decoration-2 cursor-pointer text-lg flex flex-col justify-start items-center w-full`}
               >
-                {image && (
-                  <img
-                    src={image}
-                    alt={title}
-                    className={`w-full object-cover`}
-                  />
-                )}
-                <h2 className="w-full text-start flex justify-between items-center space-x-2">
-                  <span>{title}</span>
-                  <div className="flex justify-center items-center transition-all duration-300 opacity-0 group-hover:opacity-100 space-x-2">
-                    <Checkbox
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleIsChecked(id, isChecked);
-                      }}
-                    />
-                    <span
-                      onClick={openLink}
-                      className={`rounded-full text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all ease-in-out duration-300`}
-                    >
-                      <FiArrowUpRight />
-                    </span>
+                {contentType === 'note' ? (
+                  <div className="w-full p-4 flex flex-col justify-between items-start min-h-[120px]">
+                    <p className="text-sm font-normal text-foreground line-clamp-5 w-full text-left whitespace-pre-wrap leading-relaxed">
+                      {description}
+                    </p>
+                    <div className="w-full flex justify-end mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <Checkbox
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleIsChecked(id, isChecked);
+                        }}
+                      />
+                    </div>
                   </div>
-                </h2>
+                ) : (
+                  <>
+                    {image && (
+                      <div className="w-full border-b border-border/50">
+                        <img
+                          src={image}
+                          alt={title}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).parentElement!.style.display = 'none';
+                          }}
+                          className={`w-full object-cover max-h-48 aspect-video`}
+                        />
+                      </div>
+                    )}
+                    <h2 className="w-full p-4 text-start flex justify-between items-center space-x-2">
+                      <span className="truncate">{title}</span>
+                      <div className="flex justify-center items-center transition-all duration-300 opacity-0 group-hover:opacity-100 space-x-2">
+                        <Checkbox
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleIsChecked(id, isChecked);
+                          }}
+                        />
+                        <span
+                          onClick={openLink}
+                          className={`rounded-full text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all ease-in-out duration-300`}
+                        >
+                          <FiArrowUpRight />
+                        </span>
+                      </div>
+                    </h2>
+                  </>
+                )}
               </div>
             )}
           </DialogTrigger>
-          <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
-            <div className="flex flex-col gap-6">
+          <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto sm:rounded-2xl">
+            <div className="flex flex-col gap-6 p-2">
               {/* Image Banner */}
               {image && (
-                <div className="w-full h-48 md:h-64 rounded-xl overflow-hidden relative border border-zinc-200 dark:border-zinc-800">
-                  <img src={image} alt={title} className="w-full h-full object-cover" />
+                <div className="w-full h-48 md:h-64 rounded-xl overflow-hidden relative border border-border">
+                  <img 
+                    src={image} 
+                    alt={title} 
+                    className="w-full h-full object-cover" 
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).parentElement!.style.display = 'none';
+                    }}
+                  />
                 </div>
               )}
 
-              <DialogHeader className="text-left space-y-3">
-                <DialogTitle className="text-2xl font-bold leading-tight">{title}</DialogTitle>
-                <div className="flex items-center space-x-2 text-sm text-zinc-500">
-                  {createdAt && <span>Added {new Date(createdAt).toLocaleDateString()}</span>}
-                </div>
+              <DialogHeader className="text-left space-y-1.5">
+                <DialogTitle className="text-2xl font-bold leading-tight tracking-tight">{title}</DialogTitle>
+                {createdAt && (
+                  <div className="text-sm text-muted-foreground">
+                    Added {new Date(createdAt).toLocaleDateString()}
+                  </div>
+                )}
               </DialogHeader>
 
               {/* Description */}
               {description && (
-                <div className="text-zinc-700 dark:text-zinc-300 text-sm md:text-base leading-relaxed bg-zinc-50 dark:bg-zinc-900 p-4 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                <div className="text-foreground text-sm md:text-base leading-relaxed bg-muted/50 p-4 rounded-xl border border-border">
                   {description}
                 </div>
               )}
 
               {/* Link Box */}
-              <div className="flex items-center justify-between p-4 bg-zinc-100 dark:bg-black rounded-xl border border-zinc-200 dark:border-zinc-800">
-                <div className="overflow-hidden whitespace-nowrap overflow-ellipsis mr-4">
-                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-1">Source URL</p>
-                  <a href={link} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline text-sm truncate block">
-                    {link}
-                  </a>
+              {contentType !== 'note' && (
+                <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border border-border">
+                  <div className="overflow-hidden mr-4">
+                    <p className="text-xs text-muted-foreground font-medium mb-1">Source URL</p>
+                    <a href={link} target="_blank" rel="noreferrer" className="text-primary hover:underline text-sm block break-all">
+                      {link}
+                    </a>
+                  </div>
+                  <button
+                    onClick={openLink}
+                    className="shrink-0 flex items-center justify-center h-10 w-10 bg-background border border-border rounded-full hover:bg-muted transition-colors"
+                  >
+                    <FiArrowUpRight className="text-lg" />
+                  </button>
                 </div>
-                <button
-                  onClick={openLink}
-                  className="shrink-0 flex items-center justify-center h-10 w-10 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-full hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-                >
-                  <FiArrowUpRight className="text-lg" />
-                </button>
-              </div>
+              )}
 
               {/* Actions */}
-              <div className="pt-4 flex justify-between items-center border-t border-zinc-100 dark:border-zinc-800 mt-2">
+              <div className="pt-2 flex justify-end">
                 <button
                   disabled={isDeleting}
                   onClick={deleteLinkHandler}
-                  className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors flex items-center gap-2"
+                  className="px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-colors flex items-center gap-2"
                 >
+                  <FiTrash2 className="w-4 h-4" />
                   {isDeleting ? "Deleting..." : "Delete Link"}
                 </button>
               </div>

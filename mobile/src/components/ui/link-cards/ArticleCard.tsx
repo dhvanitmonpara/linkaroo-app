@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet, View, Image, Linking } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { useTheme } from '@/hooks/use-theme';
@@ -28,6 +28,9 @@ export function ArticleCard({ link, onLongPress }: Props) {
   const domain = getDomain(link.link);
   const readTime = link.description ? estimateReadTime(link.description) : null;
 
+  const [imgError, setImgError] = useState(false);
+  const showHero = link.image && !imgError;
+
   return (
     <Pressable
       onPress={open}
@@ -39,16 +42,13 @@ export function ArticleCard({ link, onLongPress }: Props) {
       android_ripple={{ color: theme.backgroundSelected, borderless: false }}
     >
       {/* Hero image */}
-      {link.image ? (
+      {showHero && (
         <Image
-          source={{ uri: link.image }}
+          source={{ uri: link.image as string }}
           style={styles.hero}
           resizeMode="cover"
+          onError={() => setImgError(true)}
         />
-      ) : (
-        <ThemedView type="backgroundSelected" style={[styles.hero, styles.heroFallback]}>
-          <ThemedText style={styles.heroEmoji}>📰</ThemedText>
-        </ThemedView>
       )}
 
       {/* Article meta */}

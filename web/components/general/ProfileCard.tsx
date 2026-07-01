@@ -21,6 +21,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useAuth, useUser } from "@clerk/nextjs";
+import { FiCheck, FiX } from "react-icons/fi";
+import { FiUser, FiSettings, FiMessageSquare, FiLogOut } from "react-icons/fi";
 
 const ProfileCard = () => {
   const [open, setIsOpen] = useState(false);
@@ -57,7 +59,11 @@ const ProfileCard = () => {
 
         <DialogContainer
           onClose={(value) => value !== true && setIsOpen(false)}
-          trigger="Profile"
+          trigger={
+            <div className="flex items-center gap-2">
+              <FiUser /> Profile
+            </div>
+          }
           title="Profile"
           description="Edit your profile"
         >
@@ -66,7 +72,11 @@ const ProfileCard = () => {
 
         <DialogContainer
           onClose={(value) => value !== true && setIsOpen(false)}
-          trigger="Settings"
+          trigger={
+            <div className="flex items-center gap-2">
+              <FiSettings /> Settings
+            </div>
+          }
           title="Settings"
           description="Are you sure you want to logout?"
         >
@@ -75,7 +85,11 @@ const ProfileCard = () => {
 
         <DialogContainer
           onClose={(value) => value !== true && setIsOpen(false)}
-          trigger="Feedback"
+          trigger={
+            <div className="flex items-center gap-2">
+              <FiMessageSquare /> Feedback
+            </div>
+          }
           title="Feedback"
           description="Report a bug or Suggest a feature."
         >
@@ -84,18 +98,24 @@ const ProfileCard = () => {
 
         <DialogContainer
           onClose={(value) => value !== true && setIsOpen(false)}
-          trigger="Logout"
+          trigger={
+            <div className="flex items-center gap-2">
+              <FiLogOut /> Logout
+            </div>
+          }
           title="Are you sure you want to logout?"
           description="Your account will be deleted if there is no activity found for 60 days."
         >
           <div className="flex justify-center">
             <Button
               onClick={() => signOut()}
-              className="w-full rounded-sm text-zinc-50 font-semibold bg-red-500 hover:bg-red-600"
+              className="w-full rounded-sm text-zinc-50 font-semibold bg-red-500 hover:bg-red-600 flex items-center gap-1.5"
             >
+              <FiCheck className="w-4 h-4" />
               Yes
             </Button>
-            <DialogClose className="ml-1.5 rounded-sm w-full font-semibold dark:bg-zinc-800 dark:hover:bg-zinc-800/60 bg-zinc-200 hover:bg-zinc-300">
+            <DialogClose className="ml-1.5 py-1.5 flex justify-center items-center gap-1.5 rounded-md w-full font-medium bg-muted hover:bg-muted/80 text-foreground transition-colors">
+              <FiX className="w-4 h-4" />
               No
             </DialogClose>
           </div>

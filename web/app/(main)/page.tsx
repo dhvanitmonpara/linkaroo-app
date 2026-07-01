@@ -9,6 +9,7 @@ import useProfileStore from "@/store/profileStore";
 import useCollectionsStore from "@/store/collectionStore";
 import useLinkStore from "@/store/linkStore";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { LinkCard } from "@/components/dashboard";
 import { fetchedLinkType } from "@/lib/types";
@@ -122,42 +123,10 @@ const MasonryHomePage = () => {
     return (
         <div className={`w-full min-h-[calc(100vh-4.5rem)] overflow-y-auto no-scrollbar pb-24 ${theme !== "light" ? "text-zinc-100 bg-zinc-950" : "text-zinc-900 bg-zinc-50"} ${font}`}>
             {/* Header section */}
-            <div className="flex flex-col items-center justify-center pt-16 pb-12 px-6 space-y-6 max-w-2xl mx-auto">
+            <div className="flex flex-col items-center justify-center pt-24 md:pt-48 pb-16 px-6 space-y-6 max-w-2xl mx-auto">
                 <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-center">
                     What's on your mind, {user?.firstName}?
                 </h1>
-
-                <form
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        if (input.trim() !== "") quickAddHandler({ url: input });
-                    }}
-                    className="w-full relative shadow-sm rounded-full transition-shadow duration-300 focus-within:shadow-md"
-                >
-                    <Input
-                        disabled={loading}
-                        type="url"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        placeholder="Paste a link to save it..."
-                        className={`w-full px-6 py-7 text-lg rounded-full border-none outline-none ring-0 focus-visible:ring-0 ${theme !== "light"
-                                ? "bg-zinc-900 text-zinc-100 placeholder-zinc-500"
-                                : "bg-white text-zinc-900 placeholder-zinc-400"
-                            }`}
-                        style={{ boxShadow: "none" }}
-                    />
-                    <Button
-                        type="submit"
-                        disabled={loading || input.trim() === ""}
-                        className={`absolute right-2 top-2 bottom-2 h-auto px-6 rounded-full transition-all duration-300 ${input.trim() !== "" ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"
-                            } ${theme !== "light"
-                                ? "bg-zinc-200 hover:bg-white text-zinc-900"
-                                : "bg-zinc-900 hover:bg-zinc-800 text-white"
-                            }`}
-                    >
-                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save"}
-                    </Button>
-                </form>
             </div>
 
             {/* Masonry Grid */}
@@ -166,15 +135,49 @@ const MasonryHomePage = () => {
                     <div className="w-full flex justify-center py-20">
                         <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />
                     </div>
-                ) : allLinks.length === 0 ? (
-                    <div className="text-center py-20 text-zinc-500">
-                        <p className="text-lg">Nothing here yet.</p>
-                        <p className="text-sm mt-2">Paste a link above to start building your mind.</p>
-                    </div>
                 ) : (
-                    <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-6 space-y-6">
+                    <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-6">
+                        {/* Sticky Note Input Card */}
+                        <div className="break-inside-avoid mb-6">
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    if (input.trim() !== "") quickAddHandler({ url: input });
+                                }}
+                                className="w-full relative shadow-sm hover:shadow-md rounded-2xl transition-all duration-300 flex flex-col justify-start p-5 sm:p-6 bg-muted/40 hover:bg-muted/60 border border-border/60 hover:border-border min-h-[180px]"
+                            >
+                                <h3 className="text-[10px] sm:text-xs font-bold text-orange-500/80 dark:text-orange-400 tracking-widest uppercase mb-1">
+                                    New Quick Note
+                                </h3>
+                                <Textarea
+                                    disabled={loading}
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    placeholder="Start typing here..."
+                                    className="w-full px-0 py-1 text-base sm:text-lg !bg-transparent dark:!bg-transparent border-none outline-none ring-0 focus-visible:ring-0 shadow-none text-foreground placeholder:text-muted-foreground/60 resize-none flex-1 min-h-[80px]"
+                                />
+                                <div className={`flex justify-end mt-auto pt-4 transition-opacity duration-300 ${input.trim() !== "" ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+                                    <Button
+                                        type="submit"
+                                        disabled={loading || input.trim() === ""}
+                                        variant="secondary"
+                                        size="sm"
+                                        className="rounded-lg h-8 text-xs font-medium bg-muted/80 hover:bg-muted"
+                                    >
+                                        {loading ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : null}
+                                        Save Note
+                                    </Button>
+                                </div>
+                            </form>
+                        </div>
+                        {allLinks.length === 0 && (
+                            <div className="break-inside-avoid mb-6 text-center py-10 text-zinc-500 bg-muted/50 rounded-xl border border-border">
+                                <p className="text-lg">Nothing here yet.</p>
+                                <p className="text-sm mt-2">Use the sticky note to start building your mind.</p>
+                            </div>
+                        )}
                         {allLinks.map((link) => (
-                            <div key={link._id} className="break-inside-avoid">
+                            <div key={link._id} className="break-inside-avoid mb-6">
                                 <LinkCard
                                     id={link._id}
                                     title={link.title || link.link}

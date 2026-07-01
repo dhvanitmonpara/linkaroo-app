@@ -156,7 +156,7 @@ function ResponsiveDialog({
       </DrawerTrigger>
 
       <DrawerContent
-        className={`dark:bg-zinc-900/90 mx-auto border-none sm:max-w-96 ${className}`}
+        className={`bg-background mx-auto border-none sm:max-w-96 ${className}`}
       >
         {prebuildForm && (
           <DrawerHeader className={`text-left px-0 pt-6 ${headerStyling}`}>

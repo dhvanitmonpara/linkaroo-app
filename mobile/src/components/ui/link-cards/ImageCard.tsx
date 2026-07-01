@@ -29,8 +29,8 @@ export function ImageCard({ link, onLongPress }: Props) {
       ]}
       android_ripple={{ color: theme.backgroundSelected, borderless: false }}
     >
-      <View style={styles.imageWrapper}>
-        {!error ? (
+      {(!error && imageUri) && (
+        <View style={styles.imageWrapper}>
           <Image
             source={{ uri: imageUri }}
             style={styles.image}
@@ -38,26 +38,19 @@ export function ImageCard({ link, onLongPress }: Props) {
             onLoadEnd={() => setLoading(false)}
             onError={() => { setError(true); setLoading(false); }}
           />
-        ) : (
-          <ThemedView type="backgroundSelected" style={[styles.image, styles.errorFallback]}>
-            <ThemedText style={styles.errorEmoji}>🖼️</ThemedText>
-            <ThemedText themeColor="textSecondary" style={styles.errorText}>
-              Image unavailable
-            </ThemedText>
-          </ThemedView>
-        )}
 
-        {loading && !error && (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator color={theme.primary} />
+          {loading && (
+            <View style={styles.loadingOverlay}>
+              <ActivityIndicator color={theme.primary} />
+            </View>
+          )}
+
+          {/* Type badge */}
+          <View style={[styles.badge, { backgroundColor: 'rgba(0,0,0,0.55)' }]}>
+            <ThemedText style={styles.badgeText}>🖼 Image</ThemedText>
           </View>
-        )}
-
-        {/* Type badge */}
-        <View style={[styles.badge, { backgroundColor: 'rgba(0,0,0,0.55)' }]}>
-          <ThemedText style={styles.badgeText}>🖼 Image</ThemedText>
         </View>
-      </View>
+      )}
 
       {link.title && (
         <View style={[styles.footer, { borderTopColor: theme.border }]}>

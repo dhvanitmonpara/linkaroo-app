@@ -2,7 +2,7 @@ import mongoose, { Schema } from "mongoose";
 
 const CONTENT_TYPES = [
     'youtube', 'twitter', 'github', 'instagram',
-    'image', 'audio', 'article', 'book', 'movie', 'product', 'link'
+    'image', 'audio', 'article', 'book', 'movie', 'product', 'link', 'note'
 ];
 
 const linkSchema = new Schema({

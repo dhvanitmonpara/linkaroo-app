@@ -81,7 +81,8 @@ type ContentType =
   | 'book'
   | 'movie'
   | 'product'
-  | 'link';
+  | 'link'
+  | 'note';
 
 type fetchedLinkType = {
   _id: string;

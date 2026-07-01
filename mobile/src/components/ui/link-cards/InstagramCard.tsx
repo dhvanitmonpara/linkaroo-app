@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet, View, Image, Linking } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { useTheme } from '@/hooks/use-theme';
@@ -27,6 +27,9 @@ export function InstagramCard({ link, onLongPress }: Props) {
 
   const handle = getHandle(link.link);
 
+  const [imgError, setImgError] = useState(false);
+  const showAvatar = link.image && !imgError;
+
   return (
     <Pressable
       onPress={open}
@@ -42,15 +45,11 @@ export function InstagramCard({ link, onLongPress }: Props) {
 
       <View style={styles.body}>
         {/* Avatar ring */}
-        <View style={styles.ring}>
-          {link.image ? (
-            <Image source={{ uri: link.image }} style={styles.avatar} />
-          ) : (
-            <ThemedView type="backgroundSelected" style={[styles.avatar, styles.avatarFallback]}>
-              <ThemedText style={styles.avatarEmoji}>📷</ThemedText>
-            </ThemedView>
-          )}
-        </View>
+        {showAvatar && (
+          <View style={styles.ring}>
+            <Image source={{ uri: link.image as string }} style={styles.avatar} onError={() => setImgError(true)} />
+          </View>
+        )}
 
         <View style={styles.text}>
           <ThemedText style={styles.handle}>{handle}</ThemedText>
