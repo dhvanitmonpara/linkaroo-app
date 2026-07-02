@@ -68,9 +68,9 @@ const MasonryHomePage = () => {
                     { withCredentials: true }
                 );
                 if (response.status === 200) {
-                    const allCollections = response.data.data;
-                    const inboxCollection = allCollections.find((c: any) => c.isInbox === true);
-                    const regularCollections = allCollections.filter((c: any) => c.isInbox === false);
+                    const allCollections = response.data.data || response.data || [];
+                    const inboxCollection = (Array.isArray(allCollections) ? allCollections : []).find((c: any) => c.isInbox === true);
+                    const regularCollections = (Array.isArray(allCollections) ? allCollections : []).filter((c: any) => c.isInbox === false);
                     setCollections(regularCollections);
                     setInbox(inboxCollection);
                 }
@@ -86,11 +86,41 @@ const MasonryHomePage = () => {
     const quickAddHandler = async ({ url }: { url: string; }) => {
         try {
             setLoading(true);
-            const targetCollectionId = inbox?._id;
+            let targetCollectionId = inbox?._id || (inbox as any)?.ID;
 
             if (!targetCollectionId) {
-                toast.error("Inbox collection not found.");
-                return;
+                if (!_id || _id === "undefined") {
+                    toast.error("User ID not available");
+                    setLoading(false);
+                    return;
+                }
+
+                try {
+                    const createInboxRes = await axios.post(
+                        `${process.env.NEXT_PUBLIC_SERVER_API_URL}/collections`,
+                        {
+                            Title: "Inbox",
+                            IsInbox: true,
+                            CreatedByID: _id
+                        },
+                        { withCredentials: true }
+                    );
+
+                    if (createInboxRes.status === 201) {
+                        const newInbox = createInboxRes.data;
+                        targetCollectionId = newInbox._id || newInbox.ID;
+                        setInbox(newInbox);
+                    } else {
+                        toast.error("Failed to create Inbox collection");
+                        setLoading(false);
+                        return;
+                    }
+                } catch (err) {
+                    console.error("Error creating inbox:", err);
+                    toast.error("Failed to create Inbox collection");
+                    setLoading(false);
+                    return;
+                }
             }
 
             const response = await axios.post(

@@ -8,19 +8,19 @@ import (
 )
 
 type Collection struct {
-	ID          uuid.UUID  `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	CreatedByID *uuid.UUID `gorm:"type:uuid;index"`
-	Title       string     `gorm:"not null"`
-	Description string
-	CoverImage  string `gorm:"default:''"`
-	Icon        string `gorm:"default:''"`
-	Theme       string `gorm:"default:'bg-zinc-200'"`
-	IsPublic    bool   `gorm:"default:true"`
-	IsInbox     bool   `gorm:"default:false"`
-	Type        string `gorm:"default:'todos'"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   gorm.DeletedAt `gorm:"index"`
+	ID          uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"_id"`
+	CreatedByID *uuid.UUID     `gorm:"type:uuid;index" json:"createdById"`
+	Title       string         `gorm:"not null" json:"title"`
+	Description string         `json:"description"`
+	CoverImage  string         `gorm:"default:''" json:"coverImage"`
+	Icon        string         `gorm:"default:''" json:"icon"`
+	Theme       string         `gorm:"default:'bg-zinc-200'" json:"theme"`
+	IsPublic    bool           `gorm:"default:true" json:"isPublic"`
+	IsInbox     bool           `gorm:"default:false" json:"isInbox"`
+	Type        string         `gorm:"default:'todos'" json:"type"`
+	CreatedAt   time.Time      `json:"createdAt"`
+	UpdatedAt   time.Time      `json:"updatedAt"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deletedAt"`
 
 	// Relationships
 	CreatedBy     User    `gorm:"foreignKey:CreatedByID"`

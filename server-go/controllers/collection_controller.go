@@ -33,5 +33,5 @@ func GetCollectionsByUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, collections)
+	c.JSON(http.StatusOK, gin.H{"data": collections})
 }

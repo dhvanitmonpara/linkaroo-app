@@ -53,7 +53,9 @@ func SetupRouter() *gin.Engine {
 	links.Use(middleware.VerifyJWT())
 	{
 		links.GET("/all", controllers.GetAllLinks)
+		links.GET("/:collectionId", controllers.GetLinksByCollection)
 		links.POST("/:collectionId", controllers.CreateLink)
+		links.POST("/quick-add/:collectionId", controllers.QuickAddLink)
 	}
 
 	// Tag Routes
