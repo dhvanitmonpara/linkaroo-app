@@ -179,7 +179,10 @@ func QuickAddLink(c *gin.Context) {
 		}
 	} else {
 		// Treat as note
-		noteTitle := "Quick Note"
+		noteTitle := req.Link
+		if len(noteTitle) > 100 {
+			noteTitle = noteTitle[:97] + "..."
+		}
 		noteDesc := req.Link
 		customTitle = &noteTitle
 		customDescription = &noteDesc
