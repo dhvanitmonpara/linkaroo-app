@@ -12,7 +12,7 @@ func SetupRouter() *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger())
 	r.Use(middleware.ErrorHandler())
-	
+
 	// Add CORS middleware
 	config := cors.DefaultConfig()
 	config.AllowOriginFunc = func(origin string) bool {
@@ -56,7 +56,16 @@ func SetupRouter() *gin.Engine {
 		links.GET("/:collectionId", controllers.GetLinksByCollection)
 		links.POST("/:collectionId", controllers.CreateLink)
 		links.POST("/quick-add/:collectionId", controllers.QuickAddLink)
+		links.DELETE("/:linkId", controllers.DeleteLink)
 	}
+
+	// Card Routes
+	cards := api.Group("/cards")
+	cards.Use(middleware.VerifyJWT())
+	{
+		cards.POST("/:collectionId", controllers.CreateCard)
+	}
+
 
 	// Tag Routes
 	tags := api.Group("/tags")

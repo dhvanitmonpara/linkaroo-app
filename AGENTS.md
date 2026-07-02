@@ -17,4 +17,6 @@ When styling:
 3. Use CSS variables.
 4. Follow existing patterns.
 
+use /test folder for testing files
+
 A component that matches the preset is better than a visually "improved" component.

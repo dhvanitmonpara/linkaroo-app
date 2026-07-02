@@ -169,7 +169,7 @@ const MasonryHomePage = () => {
     };
 
     return (
-        <div className={`w-full min-h-[calc(100vh-4.5rem)] overflow-y-auto no-scrollbar pb-24 ${theme !== "light" ? "text-zinc-100 bg-zinc-950" : "text-zinc-900 bg-zinc-50"} ${font}`}>
+        <div className={`w-full min-h-[calc(100vh-4.5rem)] overflow-y-auto no-scrollbar pb-24`}>
             {/* Header section */}
             <div className="flex flex-col items-center justify-center pt-24 md:pt-48 pb-16 px-6 space-y-6 max-w-2xl mx-auto">
                 <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-center">
@@ -188,11 +188,12 @@ const MasonryHomePage = () => {
                         {/* Sticky Note Input Card */}
                         <div className="break-inside-avoid mb-6">
                             <form
+                                onClick={() => document.getElementById('quick-note-input')?.focus()}
                                 onSubmit={(e) => {
                                     e.preventDefault();
                                     if (input.trim() !== "") quickAddHandler({ url: input });
                                 }}
-                                className="group relative w-full flex flex-col justify-start p-5 sm:p-6 bg-muted/40 hover:bg-muted/50 focus-within:bg-muted/50 backdrop-blur-md border border-border/50 hover:border-border/80 focus-within:border-border/80 shadow-sm hover:shadow-md focus-within:shadow-md rounded-2xl transition-all duration-300 min-h-[160px] overflow-hidden"
+                                className="cursor-pointer group relative w-full flex flex-col justify-start p-5 sm:p-6 bg-muted/40 hover:bg-muted/50 focus-within:bg-muted/50 backdrop-blur-md border border-border/50 hover:border-border/80 focus-within:border-border/80 shadow-sm hover:shadow-md focus-within:shadow-md rounded-2xl transition-all duration-300 min-h-[160px] overflow-hidden"
                             >
                                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-500 pointer-events-none" />
                                 <h3 className="relative text-[10px] sm:text-xs font-semibold text-muted-foreground tracking-wider uppercase mb-3 flex items-center gap-2">

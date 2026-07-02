@@ -24,7 +24,7 @@ const Loading = ({ isLoading }: { isLoading?: "loading" | "loaded" | "fetched" }
   }, [isLoading]);
 
   return (
-    <div className="flex justify-center fixed z-50 w-screen space-x-5 items-center h-screen bg-zinc-900">
+    <div className="flex justify-center fixed z-50 w-screen space-x-5 items-center h-screen bg-zinc-50 dark:bg-zinc-950">
       {isLoading
         ? <Progress value={progress} className="absolute transition-all duration-150 left-0 top-0 h-[0.12rem] " />
         : <div className="absolute transition-all duration-150 left-0 top-0 h-[0.12rem] w-full"></div>

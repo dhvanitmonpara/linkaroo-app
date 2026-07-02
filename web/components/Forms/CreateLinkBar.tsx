@@ -17,6 +17,7 @@ import toast from "react-hot-toast";
 import { useRouter } from 'next/navigation';
 import useLinkStore from "@/store/linkStore";
 import useCollectionsStore from "@/store/collectionStore";
+import useProfileStore from "@/store/profileStore";
 import { debounce } from "lodash";
 import { CollectionType } from "@/lib/types";
 
@@ -123,6 +124,7 @@ const CreateLinkBar: React.FC<CreateLinkBarProps> = ({
 
   const { collections, inbox } = useCollectionsStore();
   const { addLinkItem, links, addCachedLinkItem } = useLinkStore();
+  const { profile } = useProfileStore();
 
   const { control, handleSubmit, register } = useForm<HandleLinkCreationType>({
     defaultValues: {
@@ -144,9 +146,10 @@ const CreateLinkBar: React.FC<CreateLinkBarProps> = ({
       }
 
       const newData = {
-        title: data.title,
+        title: identifier,
         description: data.description,
-        link: data.link,
+        link: identifier,
+        userId: profile._id,
       };
 
       const link = await axios.post(

@@ -38,7 +38,7 @@ export default function HorizontalTabs() {
     `menu-label !text-3xl !w-auto ${pathname === path ? "!text-white" : "!text-zinc-500"}`;
 
   return (
-    <div className="flex md:justify-between justify-evenly dark:bg-zinc-800 w-full px-5 bg-zinc-200 h-full md:px-12 sm:px-2 sm:!rounded-t-xl items-center sm:w-6/12">
+    <div className="flex md:justify-between justify-evenly bg-transparent w-full px-5 h-full md:px-12 sm:px-2 sm:!rounded-t-xl items-center sm:w-6/12">
       <Link href="/" className={navClass("/")}>
         <MdHome />
       </Link>

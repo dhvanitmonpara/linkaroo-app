@@ -217,14 +217,14 @@ const LinkCard = ({
                 ) : (
                   <>
                     {image && (
-                      <div className="w-full border-b border-border/50">
+                      <div className={`w-full border-b border-border/50 flex justify-center ${contentType === 'github-profile' ? 'bg-muted/40 py-6' : ''}`}>
                         <img
                           src={image}
                           alt={title}
                           onError={(e) => {
                             (e.target as HTMLImageElement).parentElement!.style.display = 'none';
                           }}
-                          className={`w-full object-cover max-h-48 aspect-video`}
+                          className={contentType === 'github-profile' ? 'w-24 h-24 object-cover rounded-full shadow-sm ring-4 ring-background' : 'w-full object-cover max-h-48 aspect-video'}
                         />
                       </div>
                     )}
@@ -250,26 +250,27 @@ const LinkCard = ({
               </div>
             )}
           </DialogTrigger>
-          <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto sm:rounded-2xl">
-            <div className="flex flex-col gap-6 p-2">
-              {/* Image Banner */}
-              {image && (
-                <div className="w-full h-48 md:h-64 rounded-xl overflow-hidden relative border border-border">
-                  <img 
-                    src={image} 
-                    alt={title} 
-                    className="w-full h-full object-cover" 
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).parentElement!.style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto sm:rounded-3xl border-border/40 bg-background/95 backdrop-blur-xl shadow-2xl p-0 gap-0">
+            {/* Image Banner */}
+            {image && (
+              <div className={`w-full h-48 md:h-72 relative flex justify-center items-center ${contentType === 'github-profile' ? 'bg-gradient-to-b from-muted/60 to-background' : ''}`}>
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent z-10 pointer-events-none" />
+                <img 
+                  src={image} 
+                  alt={title} 
+                  className={contentType === 'github-profile' ? 'w-32 h-32 md:w-40 md:h-40 object-cover rounded-full shadow-xl z-20 relative ring-4 ring-background' : 'w-full h-full object-cover'} 
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).parentElement!.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
 
-              <DialogHeader className="text-left space-y-1.5">
-                <DialogTitle className="text-2xl font-bold leading-tight tracking-tight">{title}</DialogTitle>
+            <div className={`p-6 md:p-8 flex flex-col gap-6 ${image ? '-mt-24 relative z-20' : 'pt-8'}`}>
+              <DialogHeader className="text-left space-y-2">
+                <DialogTitle className="text-2xl md:text-3xl font-extrabold leading-tight tracking-tight text-foreground drop-shadow-sm">{title}</DialogTitle>
                 {createdAt && (
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm font-medium text-muted-foreground/80">
                     Added {new Date(createdAt).toLocaleDateString()}
                   </div>
                 )}
@@ -277,25 +278,27 @@ const LinkCard = ({
 
               {/* Description */}
               {description && (
-                <div className="text-foreground text-sm md:text-base leading-relaxed bg-muted/50 p-4 rounded-xl border border-border">
+                <div className="text-foreground/90 text-base md:text-lg leading-relaxed bg-muted/30 p-5 rounded-2xl border border-border/40 shadow-sm backdrop-blur-sm">
                   {description}
                 </div>
               )}
 
               {/* Link Box */}
               {contentType !== 'note' && (
-                <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border border-border">
+                <div className="group flex items-center justify-between p-5 bg-gradient-to-r from-muted/50 to-muted/20 rounded-2xl border border-border/50 hover:border-primary/40 hover:shadow-md transition-all duration-300">
                   <div className="overflow-hidden mr-4">
-                    <p className="text-xs text-muted-foreground font-medium mb-1">Source URL</p>
-                    <a href={link} target="_blank" rel="noreferrer" className="text-primary hover:underline text-sm block break-all">
+                    <p className="text-xs text-muted-foreground font-semibold mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
+                      <FiArrowUpRight className="w-3.5 h-3.5" /> Source URL
+                    </p>
+                    <a href={link} target="_blank" rel="noreferrer" className="text-primary hover:text-primary/80 font-medium text-sm md:text-base block break-all transition-colors line-clamp-1">
                       {link}
                     </a>
                   </div>
                   <button
                     onClick={openLink}
-                    className="shrink-0 flex items-center justify-center h-10 w-10 bg-background border border-border rounded-full hover:bg-muted transition-colors"
+                    className="shrink-0 flex items-center justify-center h-12 w-12 bg-background shadow-sm border border-border/50 rounded-full group-hover:scale-105 group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all duration-300"
                   >
-                    <FiArrowUpRight className="text-lg" />
+                    <FiArrowUpRight className="text-xl" />
                   </button>
                 </div>
               )}
@@ -305,9 +308,9 @@ const LinkCard = ({
                 <button
                   disabled={isDeleting}
                   onClick={deleteLinkHandler}
-                  className="px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-colors flex items-center gap-2"
+                  className="px-5 py-2.5 text-sm font-semibold text-destructive/80 hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <FiTrash2 className="w-4 h-4" />
+                  <FiTrash2 className="w-4.5 h-4.5" />
                   {isDeleting ? "Deleting..." : "Delete Link"}
                 </button>
               </div>

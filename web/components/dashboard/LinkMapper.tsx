@@ -94,6 +94,7 @@ function LinkMapper() {
                   type={itemType}
                   link={link.link}
                   isChecked={link.isChecked}
+                  contentType={link.contentType}
                 />
               ))}
           </div>
