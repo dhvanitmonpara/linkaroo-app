@@ -50,7 +50,7 @@ func FetchMetadata(targetURL string) Metadata {
 	z := html.NewTokenizer(resp.Body)
 	isTitle := false
 
-	Loop:
+Loop:
 	for {
 		tt := z.Next()
 		switch tt {
@@ -227,24 +227,24 @@ func GenerateTitleFromURL(targetURL string) string {
 	if err != nil {
 		return targetURL
 	}
-	
+
 	path := strings.TrimSuffix(u.Path, "/")
 	if path == "" {
 		return u.Hostname()
 	}
-	
+
 	segments := strings.Split(path, "/")
 	lastSegment := segments[len(segments)-1]
-	
+
 	// Remove common file extensions
 	if idx := strings.LastIndex(lastSegment, "."); idx > 0 {
 		lastSegment = lastSegment[:idx]
 	}
-	
+
 	// Replace hyphens and underscores with spaces
 	lastSegment = strings.ReplaceAll(lastSegment, "-", " ")
 	lastSegment = strings.ReplaceAll(lastSegment, "_", " ")
-	
+
 	// Capitalize words
 	words := strings.Fields(lastSegment)
 	for i, w := range words {
@@ -253,7 +253,7 @@ func GenerateTitleFromURL(targetURL string) string {
 			words[i] = strings.ToUpper(w[:1]) + w[1:]
 		}
 	}
-	
+
 	title := strings.Join(words, " ")
 	if title == "" {
 		return targetURL
