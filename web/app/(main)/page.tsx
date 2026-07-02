@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import axios, { AxiosError } from "axios";
 import { useUser } from "@clerk/nextjs";
 import toast from "react-hot-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowRight } from "lucide-react";
 import useProfileStore from "@/store/profileStore";
 import useCollectionsStore from "@/store/collectionStore";
 import useLinkStore from "@/store/linkStore";
@@ -24,6 +24,24 @@ const MasonryHomePage = () => {
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const [fetchingLinks, setFetchingLinks] = useState(true);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'n' || e.key === 'N') {
+                if (
+                    document.activeElement?.tagName === "INPUT" ||
+                    document.activeElement?.tagName === "TEXTAREA"
+                ) {
+                    return;
+                }
+                e.preventDefault();
+                document.getElementById('quick-note-input')?.focus();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     useEffect(() => {
         const fetchAllLinks = async () => {
@@ -144,38 +162,41 @@ const MasonryHomePage = () => {
                                     e.preventDefault();
                                     if (input.trim() !== "") quickAddHandler({ url: input });
                                 }}
-                                className="w-full relative shadow-sm hover:shadow-md rounded-2xl transition-all duration-300 flex flex-col justify-start p-5 sm:p-6 bg-muted/40 hover:bg-muted/60 border border-border/60 hover:border-border min-h-[180px]"
+                                className="group relative w-full flex flex-col justify-start p-5 sm:p-6 bg-muted/40 hover:bg-muted/50 focus-within:bg-muted/50 backdrop-blur-md border border-border/50 hover:border-border/80 focus-within:border-border/80 shadow-sm hover:shadow-md focus-within:shadow-md rounded-2xl transition-all duration-300 min-h-[160px] overflow-hidden"
                             >
-                                <h3 className="text-[10px] sm:text-xs font-bold text-orange-500/80 dark:text-orange-400 tracking-widest uppercase mb-1">
-                                    New Quick Note
+                                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                                <h3 className="relative text-[10px] sm:text-xs font-semibold text-muted-foreground tracking-wider uppercase mb-3 flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-primary/80 animate-pulse" />
+                                    Quick Capture
                                 </h3>
                                 <Textarea
+                                    id="quick-note-input"
                                     disabled={loading}
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
-                                    placeholder="Start typing here..."
-                                    className="w-full px-0 py-1 text-base sm:text-lg !bg-transparent dark:!bg-transparent border-none outline-none ring-0 focus-visible:ring-0 shadow-none text-foreground placeholder:text-muted-foreground/60 resize-none flex-1 min-h-[80px]"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                                            e.preventDefault();
+                                            if (input.trim() !== "" && !loading) {
+                                                quickAddHandler({ url: input });
+                                            }
+                                        }
+                                    }}
+                                    placeholder="Jot down a thought, save a link, or capture an idea..."
+                                    className="relative w-full px-0 py-1 text-base sm:text-lg !bg-transparent dark:!bg-transparent border-none outline-none ring-0 focus-visible:ring-0 shadow-none text-foreground placeholder:text-muted-foreground/50 resize-none flex-1 min-h-[80px]"
                                 />
-                                <div className={`flex justify-end mt-auto pt-4 transition-opacity duration-300 ${input.trim() !== "" ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+                                <div className="relative flex justify-end mt-auto pt-4">
                                     <Button
                                         type="submit"
                                         disabled={loading || input.trim() === ""}
-                                        variant="secondary"
-                                        size="sm"
-                                        className="rounded-lg h-8 text-xs font-medium bg-muted/80 hover:bg-muted"
+                                        size="icon"
+                                        className={`rounded-full h-8 w-8 shadow-sm transition-all duration-200 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] ${input.trim() !== "" ? "scale-100 opacity-100" : "scale-0 opacity-0 pointer-events-none"}`}
                                     >
-                                        {loading ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : null}
-                                        Save Note
+                                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
                                     </Button>
                                 </div>
                             </form>
                         </div>
-                        {allLinks.length === 0 && (
-                            <div className="break-inside-avoid mb-6 text-center py-10 text-zinc-500 bg-muted/50 rounded-xl border border-border">
-                                <p className="text-lg">Nothing here yet.</p>
-                                <p className="text-sm mt-2">Use the sticky note to start building your mind.</p>
-                            </div>
-                        )}
                         {allLinks.map((link) => (
                             <div key={link._id} className="break-inside-avoid mb-6">
                                 <LinkCard

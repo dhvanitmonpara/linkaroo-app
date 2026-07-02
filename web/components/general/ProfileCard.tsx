@@ -106,18 +106,18 @@ const ProfileCard = () => {
           title="Are you sure you want to logout?"
           description="Your account will be deleted if there is no activity found for 60 days."
         >
-          <div className="flex justify-center">
+          <div className="flex justify-end gap-3 mt-2">
+            <DialogClose className="px-4 py-2 flex justify-center items-center gap-1.5 rounded-md font-medium bg-muted hover:bg-muted/80 text-foreground transition-colors">
+              <FiX className="w-4 h-4" />
+              No
+            </DialogClose>
             <Button
               onClick={() => signOut()}
-              className="w-full rounded-sm text-zinc-50 font-semibold bg-red-500 hover:bg-red-600 flex items-center gap-1.5"
+              className="px-4 py-2 rounded-md text-zinc-50 font-semibold bg-red-500 hover:bg-red-600 flex items-center gap-1.5"
             >
               <FiCheck className="w-4 h-4" />
               Yes
             </Button>
-            <DialogClose className="ml-1.5 py-1.5 flex justify-center items-center gap-1.5 rounded-md w-full font-medium bg-muted hover:bg-muted/80 text-foreground transition-colors">
-              <FiX className="w-4 h-4" />
-              No
-            </DialogClose>
           </div>
         </DialogContainer>
       </PopoverContent>
