@@ -27,6 +27,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
 import CustomCheckbox from "@/components/ui/CustomCheckbox";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -264,9 +265,9 @@ const isNote = contentType === 'note' || title === 'Quick Note';
               </div>
             )}
           </DialogTrigger>
-          <DialogContent className="max-w-[95vw] sm:max-w-5xl max-h-[90vh] overflow-y-auto overflow-x-hidden sm:rounded-3xl border-border/10 bg-[#0d0e12] text-zinc-300 shadow-2xl p-6 md:p-10 gap-0">
+          <DialogContent showCloseButton={false} className="max-w-[95vw] sm:max-w-5xl max-h-[90vh] overflow-y-auto overflow-x-hidden sm:rounded-3xl border-white/10 bg-zinc-950 text-zinc-300 shadow-2xl p-6 md:p-10 gap-0">
             {/* Top Right Actions */}
-            <div className="absolute top-6 right-6 flex items-center space-x-4 z-50">
+            <div className="absolute top-6 right-6 flex items-center space-x-5 z-50 bg-zinc-950/80 backdrop-blur-sm px-2 py-1 rounded-full">
               <button className="text-zinc-500 hover:text-zinc-300 transition-colors">
                 <Pencil className="w-5 h-5" />
               </button>
@@ -277,6 +278,11 @@ const isNote = contentType === 'note' || title === 'Quick Note';
               >
                 <Trash2 className="w-5 h-5" />
               </button>
+              <div className="w-px h-5 bg-white/10"></div>
+              <DialogClose className="text-zinc-500 hover:text-zinc-300 transition-colors focus:outline-none">
+                <X className="w-6 h-6" />
+                <span className="sr-only">Close</span>
+              </DialogClose>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] gap-8 md:gap-12 mt-4 w-full">
@@ -285,11 +291,11 @@ const isNote = contentType === 'note' || title === 'Quick Note';
               <div className="flex flex-col space-y-6 w-full min-w-0">
                 
                 {/* Image Box */}
-                <div className="w-full aspect-square bg-white rounded-2xl flex items-center justify-center p-6 overflow-hidden shadow-sm shrink-0">
+                <div className="w-full aspect-video bg-white/5 rounded-2xl flex items-center justify-center p-6 overflow-hidden shadow-sm shrink-0">
                   {image ? (
-                    <img src={image} alt={title} className="w-full h-full object-contain" />
+                    <img src={image} alt={title} className="w-full h-full object-contain drop-shadow-sm" />
                   ) : (
-                    <div className="text-zinc-400 font-semibold text-2xl">
+                    <div className="text-zinc-500 font-medium text-xl">
                       {isNote ? "Note" : "Link"}
                     </div>
                   )}
@@ -299,49 +305,31 @@ const isNote = contentType === 'note' || title === 'Quick Note';
                 {isNote === false && (
                   <button 
                     onClick={openLink}
-                    className="w-full bg-[#1c1d21] hover:bg-[#25262b] text-zinc-200 py-4 rounded-xl flex items-center justify-center space-x-2 font-medium transition-colors shrink-0"
+                    className="w-full bg-zinc-900 hover:bg-zinc-800 text-zinc-200 py-4 rounded-xl flex items-center justify-center space-x-2 font-medium transition-all shadow-sm ring-1 ring-white/10 shrink-0"
                   >
                     <ExternalLink className="w-5 h-5" />
                     <span>Visit Link</span>
                   </button>
                 )}
 
-                {/* URL */}
+                {/* URL and Date */}
                 {isNote === false && (
-                  <div className="flex items-center justify-between text-zinc-500 text-sm px-2 w-full overflow-hidden">
-                    <span className="truncate pr-4 min-w-0">{link}</span>
-                    <button className="hover:text-zinc-300 transition-colors shrink-0">
-                      <Copy className="w-4 h-4" />
-                    </button>
+                  <div className="flex flex-col space-y-1.5 px-2">
+                    <div className="flex items-center justify-between text-zinc-500 text-sm w-full overflow-hidden">
+                      <span className="truncate pr-4 min-w-0">{link}</span>
+                      <button className="hover:text-zinc-300 transition-colors shrink-0">
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    {createdAt && (
+                      <div className="text-zinc-600 text-xs">
+                        Saved {new Date(createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {/* Meta Details */}
-                <div className="flex flex-col space-y-4 pt-4 text-sm px-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-zinc-500 flex items-center gap-2"><Calendar className="w-4 h-4" /> Saved</span>
-                    <span className="text-zinc-300">{createdAt ? new Date(createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Unknown'}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-zinc-500 flex items-center gap-2"><Tag className="w-4 h-4" /> Type</span>
-                    <span className="text-zinc-300">{isNote ? 'Note' : 'Website'}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-zinc-500 flex items-center gap-2"><Globe className="w-4 h-4" /> Source</span>
-                    <span className="text-zinc-300">Dashboard</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-zinc-500 flex items-center gap-2"><Folder className="w-4 h-4" /> In Collection</span>
-                    <span className="text-zinc-300 font-medium">Linkaroo</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-zinc-500 flex items-center gap-2"><Circle className="w-4 h-4" /> Added by</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-zinc-300">User</span>
-                      <div className="w-6 h-6 rounded-full bg-orange-600 text-white flex items-center justify-center text-xs font-bold">U</div>
-                    </div>
-                  </div>
-                </div>
+
 
               </div>
 
@@ -349,21 +337,21 @@ const isNote = contentType === 'note' || title === 'Quick Note';
               <div className="flex flex-col">
                 
                 {/* Content Type Badge */}
-                <div className="inline-flex items-center gap-2 bg-[#1c1d21] text-zinc-300 px-3 py-1.5 rounded-full text-xs font-medium w-fit mb-6">
+                <div className="inline-flex items-center gap-2 bg-zinc-900 ring-1 ring-white/10 text-zinc-300 px-3 py-1.5 rounded-full text-xs font-medium w-fit mb-6 shadow-sm">
                   <Globe className="w-4 h-4" />
                   {isNote ? 'Note' : 'Website'}
                 </div>
 
                 {/* Title */}
-                <DialogTitle className="text-3xl md:text-4xl font-bold text-zinc-100 leading-tight mb-8">
+                <DialogTitle className="text-3xl md:text-4xl font-bold text-zinc-50 leading-tight mb-8">
                   {isNote ? (title === 'Quick Note' ? (description || title) : title) : title}
                 </DialogTitle>
 
                 {/* Notes Section */}
                 {(description || isNote) && (
                   <div className="mb-8">
-                    <h3 className="text-zinc-400 text-sm mb-3">Notes</h3>
-                    <div className="bg-[#1c1d21] text-zinc-300 p-5 rounded-xl text-sm leading-relaxed whitespace-pre-wrap">
+                    <h3 className="text-zinc-400 text-sm font-medium mb-3">Notes</h3>
+                    <div className="bg-zinc-900/50 ring-1 ring-white/5 text-zinc-300 p-5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap shadow-inner">
                       {description || (isNote && title === 'Quick Note' && link && !link.match(/^[0-9a-fA-F]{8}-/) ? link : (description || "No notes available."))}
                     </div>
                   </div>
@@ -371,25 +359,25 @@ const isNote = contentType === 'note' || title === 'Quick Note';
 
                 {/* Tags Section */}
                 <div className="mb-8">
-                  <h3 className="text-zinc-400 text-sm mb-3">Tags</h3>
+                  <h3 className="text-zinc-400 text-sm font-medium mb-3">Tags</h3>
                   <div className="flex flex-wrap items-center gap-3">
                     {['Productivity', 'Research'].map(tag => (
-                      <div key={tag} className="bg-[#1c1d21] text-zinc-300 px-4 py-2 rounded-full text-xs font-medium flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                      <div key={tag} className="bg-zinc-900 ring-1 ring-white/10 hover:ring-white/20 hover:bg-zinc-800 transition-all text-zinc-200 px-4 py-2 rounded-full text-xs font-medium flex items-center gap-2 cursor-pointer shadow-sm">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
                         {tag}
                       </div>
                     ))}
-                    <button className="bg-[#1c1d21] hover:bg-[#25262b] text-zinc-300 px-4 py-2 rounded-full text-xs font-medium transition-colors">
-                      +
+                    <button className="bg-zinc-900 hover:bg-zinc-800 ring-1 ring-white/10 text-zinc-400 hover:text-zinc-200 px-4 py-2 rounded-full text-xs font-medium transition-all shadow-sm">
+                      <span className="text-sm leading-none">+</span>
                     </button>
                   </div>
                 </div>
 
                 {/* Collection Section */}
                 <div className="mb-8">
-                  <h3 className="text-zinc-400 text-sm mb-3">Collection</h3>
-                  <div className="bg-[#1c1d21] hover:bg-[#25262b] cursor-pointer transition-colors p-4 rounded-xl flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-3 text-zinc-300">
+                  <h3 className="text-zinc-400 text-sm font-medium mb-3">Collection</h3>
+                  <div className="bg-zinc-900/50 hover:bg-zinc-900/80 ring-1 ring-white/5 hover:ring-white/10 cursor-pointer transition-all p-4 rounded-2xl flex items-center justify-between text-sm shadow-sm">
+                    <div className="flex items-center gap-3 text-zinc-200 font-medium">
                       <Folder className="w-5 h-5 text-zinc-400" />
                       Linkaroo
                     </div>
@@ -401,24 +389,24 @@ const isNote = contentType === 'note' || title === 'Quick Note';
                 <div className="mb-8">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <h3 className="text-zinc-400 text-sm">Tasks & Reminders</h3>
-                      <span className="bg-[#1c1d21] text-zinc-400 text-xs px-2 py-0.5 rounded-md">2</span>
+                      <h3 className="text-zinc-400 text-sm font-medium">Tasks & Reminders</h3>
+                      <span className="bg-zinc-800 ring-1 ring-white/10 text-zinc-300 text-xs px-2 py-0.5 rounded-md font-medium">2</span>
                     </div>
                     <button className="text-emerald-500 text-sm hover:text-emerald-400 transition-colors font-medium">
                       + Add
                     </button>
                   </div>
                   
-                  <div className="bg-[#1c1d21] rounded-xl p-2 flex flex-col gap-1">
+                  <div className="bg-zinc-900/50 ring-1 ring-white/5 rounded-2xl p-2 flex flex-col gap-1 shadow-inner">
                     {[
                       { title: "Review content", date: "Tomorrow" },
                       { title: "Share with team", date: "Next week" }
                     ].map((task, idx) => (
-                      <div key={idx} className="flex items-center gap-4 p-3 rounded-lg hover:bg-[#25262b] transition-colors group cursor-pointer">
-                        <Circle className="w-5 h-5 text-zinc-500 shrink-0" />
-                        <span className="text-zinc-300 text-sm">{task.title}</span>
+                      <div key={idx} className="flex items-center gap-4 p-3 rounded-xl hover:bg-zinc-800/80 transition-all group cursor-pointer">
+                        <Circle className="w-5 h-5 text-zinc-500 shrink-0 group-hover:text-zinc-400 transition-colors" />
+                        <span className="text-zinc-200 text-sm font-medium">{task.title}</span>
                         <div className="ml-auto flex items-center gap-3">
-                          <div className="text-emerald-500 text-xs flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                          <div className="text-emerald-500/90 text-xs flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
                             <Calendar className="w-3.5 h-3.5" />
                             {task.date}
                           </div>
@@ -429,12 +417,7 @@ const isNote = contentType === 'note' || title === 'Quick Note';
                   </div>
                 </div>
 
-                {/* Footer */}
-                <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-center text-xs text-zinc-600 gap-2">
-                  <span>Created: {createdAt ? new Date(createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Unknown'}</span>
-                  <span>•</span>
-                  <span>Updated: {createdAt ? new Date(createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Unknown'}</span>
-                </div>
+
 
               </div>
             </div>
