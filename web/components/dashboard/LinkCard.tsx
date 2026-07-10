@@ -70,16 +70,30 @@ const LinkCard = ({
   };
 
 const isNote = contentType === 'note' || title === 'Quick Note';
+const isYouTube = contentType === 'youtube' || (link && (link.includes('youtube.com') || link.includes('youtu.be')));
 
+  const getYouTubeId = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+  const youtubeId = isYouTube ? getYouTubeId(link) : null;
+
+  const hasMedia = Boolean(image || isYouTube);
   const baseCardClass = `block w-full text-foreground select-none group relative flex-col transition-all duration-300 rounded-xl overflow-hidden flex justify-center items-center`;
+
   const cardClass = `${baseCardClass} ${
     isNote
       ? type === "todos"
         ? "h-auto min-h-[3.5rem] py-3 px-5 border-border/80 bg-muted/60 border-[1px] hover:bg-muted/80 !rounded-3xl"
         : "bg-muted/50 border border-border/60 shadow-sm hover:shadow-md hover:border-border/80 hover:bg-muted/70 !rounded-3xl"
-      : type === "todos"
-        ? "h-14 px-5 border-border bg-muted/50 border-[1px] hover:bg-muted"
-        : "bg-muted/40 border border-border/60 shadow-sm hover:shadow-md hover:border-border hover:bg-muted/60"
+      : hasMedia
+        ? type === "todos"
+          ? "h-14 px-2 bg-transparent hover:bg-muted/30"
+          : "bg-transparent hover:bg-muted/30"
+        : type === "todos"
+          ? "h-14 px-5 border-border bg-muted/50 border-[1px] hover:bg-muted"
+          : "bg-muted/40 border border-border/60 shadow-sm hover:shadow-md hover:border-border hover:bg-muted/60"
   }`;
 
   const addToListHandler = async (collectionId: string) => {
@@ -145,7 +159,7 @@ const isNote = contentType === 'note' || title === 'Quick Note';
 
   return (
     <ContextMenu>
-      <ContextMenuTrigger>
+      <ContextMenuTrigger className="w-full h-full flex">
         <Dialog>
           <DialogTrigger
             nativeButton={false}
@@ -153,7 +167,7 @@ const isNote = contentType === 'note' || title === 'Quick Note';
           >
             {type === "todos" && (
               <h2
-                className={`font-semibold decoration-2 cursor-pointer text-lg flex justify-start items-center w-full space-x-6`}
+                className={`font-medium decoration-2 cursor-pointer ${isNote ? 'text-lg' : 'text-sm font-normal'} flex justify-start items-center w-full space-x-6`}
               >
                 <CustomCheckbox
                   color={color}
@@ -211,7 +225,7 @@ const isNote = contentType === 'note' || title === 'Quick Note';
             )}
             {(type === "banners" || type === "cards") && (
               <div
-                className={`font-semibold decoration-2 cursor-pointer text-lg flex flex-col justify-start items-center w-full`}
+                className={`font-medium decoration-2 cursor-pointer ${isNote ? 'text-lg' : 'text-sm font-normal'} flex flex-col justify-start items-center w-full`}
               >
                 {isNote ? (
                   <div className="w-full p-6 flex flex-col justify-between items-start min-h-[140px] relative overflow-hidden">
@@ -231,6 +245,14 @@ const isNote = contentType === 'note' || title === 'Quick Note';
                   </div>
                 ) : (
                   <>
+                    {(image || isYouTube) && (
+                      <span
+                        onClick={openLink}
+                        className="absolute top-2 right-2 p-2 bg-background/80 backdrop-blur-sm rounded-full text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all ease-in-out duration-300 opacity-0 group-hover:opacity-100 shadow-sm z-20 hover:scale-105 active:scale-95"
+                      >
+                        <FiArrowUpRight />
+                      </span>
+                    )}
                     {image && (
                       <div className={`w-full border-b border-border/50 flex justify-center ${contentType === 'github-profile' ? 'bg-muted/40 py-6' : ''}`}>
                         <img
@@ -243,29 +265,25 @@ const isNote = contentType === 'note' || title === 'Quick Note';
                         />
                       </div>
                     )}
-                    <h2 className="w-full p-4 text-start flex justify-between items-center space-x-2">
+                    <h2 className={`w-full py-2 px-2 ${(image || isYouTube) ? 'text-center justify-center' : 'text-start justify-between'} flex items-center`}>
                       <span className="truncate">{title}</span>
-                      <div className="flex justify-center items-center transition-all duration-300 opacity-0 group-hover:opacity-100 space-x-2">
-                        <Checkbox
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleIsChecked(id, isChecked);
-                          }}
-                        />
-                        <span
-                          onClick={openLink}
-                          className={`rounded-full text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all ease-in-out duration-300`}
-                        >
-                          <FiArrowUpRight />
-                        </span>
-                      </div>
+                      {!(image || isYouTube) && (
+                        <div className="flex justify-center items-center transition-all duration-300 opacity-0 group-hover:opacity-100 space-x-2 pl-2">
+                          <span
+                            onClick={openLink}
+                            className={`rounded-full text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all ease-in-out duration-300`}
+                          >
+                            <FiArrowUpRight />
+                          </span>
+                        </div>
+                      )}
                     </h2>
                   </>
                 )}
               </div>
             )}
           </DialogTrigger>
-          <DialogContent showCloseButton={false} className="max-w-[95vw] sm:max-w-5xl max-h-[90vh] overflow-y-auto overflow-x-hidden sm:rounded-3xl border-white/10 bg-zinc-950 text-zinc-300 shadow-2xl p-6 md:p-10 gap-0">
+          <DialogContent showCloseButton={false} className="w-[95vw] lg:w-[50vw] max-w-[95vw] lg:max-w-[50vw] lg:min-w-[800px] max-h-[90vh] overflow-y-auto overflow-x-hidden sm:rounded-3xl border-white/10 bg-zinc-950 text-zinc-300 shadow-2xl p-6 md:p-12 gap-0">
             {/* Top Right Actions */}
             <div className="absolute top-6 right-6 flex items-center space-x-5 z-50 bg-zinc-950/80 backdrop-blur-sm px-2 py-1 rounded-full">
               <button className="text-zinc-500 hover:text-zinc-300 transition-colors">
@@ -291,8 +309,19 @@ const isNote = contentType === 'note' || title === 'Quick Note';
               <div className="flex flex-col space-y-6 w-full min-w-0">
                 
                 {/* Image Box */}
-                <div className="w-full aspect-video bg-white/5 rounded-2xl flex items-center justify-center p-6 overflow-hidden shadow-sm shrink-0">
-                  {image ? (
+                <div className={`w-full aspect-video rounded-2xl flex items-center justify-center overflow-hidden shadow-sm shrink-0 ${isYouTube ? '' : 'bg-white/5 p-6'}`}>
+                  {isYouTube && youtubeId ? (
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      src={`https://www.youtube.com/embed/${youtubeId}`}
+                      title={title}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                      className="w-full h-full object-cover rounded-2xl"
+                    ></iframe>
+                  ) : image ? (
                     <img src={image} alt={title} className="w-full h-full object-contain drop-shadow-sm" />
                   ) : (
                     <div className="text-zinc-500 font-medium text-xl">

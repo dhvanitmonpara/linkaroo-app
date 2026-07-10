@@ -184,9 +184,9 @@ const MasonryHomePage = () => {
                         <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />
                     </div>
                 ) : (
-                    <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-6">
+                    <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-3">
                         {/* Sticky Note Input Card */}
-                        <div className="break-inside-avoid mb-6">
+                        <div className="break-inside-avoid mb-3">
                             <form
                                 onClick={() => document.getElementById('quick-note-input')?.focus()}
                                 onSubmit={(e) => {
@@ -229,7 +229,7 @@ const MasonryHomePage = () => {
                             </form>
                         </div>
                         {allLinks.map((link) => (
-                            <div key={link._id} className="break-inside-avoid mb-6">
+                            <div key={link._id} className="break-inside-avoid mb-2">
                                 <LinkCard
                                     id={link._id}
                                     title={link.title || link.link}

@@ -21,7 +21,7 @@ func FetchMetadata(targetURL string) Metadata {
 	meta := Metadata{}
 
 	client := &http.Client{
-		Timeout: 5 * time.Second,
+		Timeout: 10 * time.Second,
 	}
 
 	req, err := http.NewRequest("GET", targetURL, nil)
@@ -29,7 +29,17 @@ func FetchMetadata(targetURL string) Metadata {
 		return meta
 	}
 	// Many sites require a user agent
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36")
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
+	req.Header.Set("Sec-Ch-Ua", "\"Not A(Brand\";v=\"99\", \"Google Chrome\";v=\"121\", \"Chromium\";v=\"121\"")
+	req.Header.Set("Sec-Ch-Ua-Mobile", "?0")
+	req.Header.Set("Sec-Ch-Ua-Platform", "\"Windows\"")
+	req.Header.Set("Sec-Fetch-Dest", "document")
+	req.Header.Set("Sec-Fetch-Mode", "navigate")
+	req.Header.Set("Sec-Fetch-Site", "none")
+	req.Header.Set("Sec-Fetch-User", "?1")
+	req.Header.Set("Upgrade-Insecure-Requests", "1")
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -37,18 +47,20 @@ func FetchMetadata(targetURL string) Metadata {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return meta
+	if resp.StatusCode >= 400 && resp.StatusCode != 403 {
+		// We still try to parse on 403 because sometimes Cloudflare returns 403 but the site has some tags, or a custom error page with og tags.
+		// Actually, let's just proceed for all status codes. Some sites return 404 but have valid metadata for the "Not Found" page.
 	}
 
 	// We only want to parse HTML
 	contentType := resp.Header.Get("Content-Type")
-	if !strings.HasPrefix(contentType, "text/html") {
+	if contentType != "" && !strings.HasPrefix(contentType, "text/html") && !strings.Contains(contentType, "text/html") {
 		return meta
 	}
 
 	z := html.NewTokenizer(resp.Body)
 	isTitle := false
+	var titleBuf string
 
 Loop:
 	for {
@@ -74,28 +86,38 @@ Loop:
 					}
 				}
 
-				if name == "description" && meta.Description == "" {
+				if name == "description" && meta.Description == "" && content != "" {
 					meta.Description = content
-				} else if property == "og:description" || name == "og:description" || property == "twitter:description" || name == "twitter:description" {
+				} else if (property == "og:description" || name == "og:description" || property == "twitter:description" || name == "twitter:description") && content != "" {
 					meta.Description = content
-				} else if property == "og:title" || name == "og:title" || property == "twitter:title" || name == "twitter:title" {
+				} else if (property == "og:title" || name == "og:title" || property == "twitter:title" || name == "twitter:title") && content != "" {
 					meta.Title = content
-				} else if property == "og:image" || name == "og:image" || property == "twitter:image" || name == "twitter:image" {
+				} else if (property == "og:image" || name == "og:image" || property == "twitter:image" || name == "twitter:image") && content != "" {
+					// Handle relative image URLs
+					if strings.HasPrefix(content, "/") && !strings.HasPrefix(content, "//") {
+						u, _ := url.Parse(targetURL)
+						content = u.Scheme + "://" + u.Host + content
+					} else if strings.HasPrefix(content, "//") {
+						u, _ := url.Parse(targetURL)
+						content = u.Scheme + ":" + content
+					}
 					meta.Image = content
-				} else if property == "og:type" || name == "og:type" {
+				} else if (property == "og:type" || name == "og:type") && content != "" {
 					meta.Type = content
 				}
 			}
 		case html.TextToken:
 			if isTitle {
-				// Don't overwrite og:title if already set
-				if meta.Title == "" {
-					meta.Title = string(z.Text())
-				}
-				isTitle = false
+				titleBuf += string(z.Text())
 			}
 		case html.EndTagToken:
-			// We no longer stop at </head> because some sites put meta tags inside <body> or have malformed HTML
+			t := z.Token()
+			if t.Data == "title" {
+				isTitle = false
+				if meta.Title == "" {
+					meta.Title = strings.TrimSpace(titleBuf)
+				}
+			}
 			continue
 		}
 	}
