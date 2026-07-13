@@ -62,6 +62,7 @@ const LinkCard = ({
   const { addCachedLinkItem, toggleIsChecked, removeAllLinkItem, removeLinkItem } = useLinkStore();
   const { collections, removeInboxLinkItem } = useCollectionsStore();
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const [mediaError, setMediaError] = React.useState(false);
   const pathname = usePathname();
 
   const openLink = (e: React.MouseEvent<HTMLSpanElement, MouseEvent>) => {
@@ -307,7 +308,7 @@ const LinkCard = ({
               <div className="flex flex-col space-y-3 w-full min-w-0">
 
                 {/* Image Box */}
-                <div className={`w-full aspect-video rounded-2xl flex items-center justify-center overflow-hidden shadow-sm shrink-0 ${isYouTube ? '' : 'bg-white/5'}`}>
+                <div className={`w-full aspect-video rounded-2xl flex items-start justify-center overflow-y-auto overflow-x-hidden shadow-sm shrink-0 no-scrollbar ${isYouTube ? '' : 'bg-white/5'}`}>
                   {isYouTube && youtubeId ? (
                     <iframe
                       width="100%"
@@ -319,10 +320,17 @@ const LinkCard = ({
                       allowFullScreen
                       className="w-full h-full object-cover rounded-2xl"
                     ></iframe>
+                  ) : !isNote && link && !mediaError ? (
+                    <img
+                      src={`https://api.microlink.io/?url=${encodeURIComponent(link)}&screenshot=true&screenshot.fullPage=true&meta=false&embed=screenshot.url`}
+                      alt={title}
+                      className="w-full h-auto object-top bg-white"
+                      onError={() => setMediaError(true)}
+                    />
                   ) : image ? (
                     <img src={image} alt={title} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="text-zinc-500 font-medium text-xl">
+                    <div className="text-zinc-500 font-medium text-xl h-full flex items-center">
                       {isNote ? "Note" : "Link"}
                     </div>
                   )}
