@@ -57,7 +57,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
           navigate.push("/auth/signin")
           return
         }
-        
+
         const currentUser = await axios({
           method: "GET",
           url: `${process.env.NEXT_PUBLIC_SERVER_API_URL}/users/current/${email}`,
@@ -72,7 +72,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
         if (currentUser.data.data) {
           addProfile(currentUser.data.data);
-          
+
           try {
             const tagsResponse = await axios.get(
               `${process.env.NEXT_PUBLIC_SERVER_API_URL}/tags/get/o/${currentUser.data.data._id}`,
