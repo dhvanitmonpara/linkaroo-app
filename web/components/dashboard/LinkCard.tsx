@@ -69,8 +69,8 @@ const LinkCard = ({
     window.open(link, "_blank");
   };
 
-const isNote = contentType === 'note' || title === 'Quick Note';
-const isYouTube = contentType === 'youtube' || (link && (link.includes('youtube.com') || link.includes('youtu.be')));
+  const isNote = contentType === 'note' || title === 'Quick Note';
+  const isYouTube = contentType === 'youtube' || (link && (link.includes('youtube.com') || link.includes('youtu.be')));
 
   const getYouTubeId = (url: string) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -82,19 +82,18 @@ const isYouTube = contentType === 'youtube' || (link && (link.includes('youtube.
   const hasMedia = Boolean(image || isYouTube);
   const baseCardClass = `block w-full text-foreground select-none group relative flex-col transition-all duration-300 rounded-xl overflow-hidden flex justify-center items-center`;
 
-  const cardClass = `${baseCardClass} ${
-    isNote
+  const cardClass = `${baseCardClass} ${isNote
+    ? type === "todos"
+      ? "h-auto min-h-[3.5rem] py-3 px-5 border-border/80 bg-muted/60 border-[1px] hover:bg-muted/80 !rounded-3xl"
+      : "bg-muted/50 border border-border/60 shadow-sm hover:shadow-md hover:border-border/80 hover:bg-muted/70 !rounded-3xl"
+    : hasMedia
       ? type === "todos"
-        ? "h-auto min-h-[3.5rem] py-3 px-5 border-border/80 bg-muted/60 border-[1px] hover:bg-muted/80 !rounded-3xl"
-        : "bg-muted/50 border border-border/60 shadow-sm hover:shadow-md hover:border-border/80 hover:bg-muted/70 !rounded-3xl"
-      : hasMedia
-        ? type === "todos"
-          ? "h-14 px-2 bg-transparent hover:bg-muted/30"
-          : "bg-transparent hover:bg-muted/30"
-        : type === "todos"
-          ? "h-14 px-5 border-border bg-muted/50 border-[1px] hover:bg-muted"
-          : "bg-muted/40 border border-border/60 shadow-sm hover:shadow-md hover:border-border hover:bg-muted/60"
-  }`;
+        ? "h-14 px-2 bg-transparent hover:bg-muted/30"
+        : "bg-transparent hover:bg-muted/30"
+      : type === "todos"
+        ? "h-14 px-5 border-border bg-muted/50 border-[1px] hover:bg-muted"
+        : "bg-muted/40 border border-border/60 shadow-sm hover:shadow-md hover:border-border hover:bg-muted/60"
+    }`;
 
   const addToListHandler = async (collectionId: string) => {
     let loaderId = "";
@@ -283,33 +282,32 @@ const isYouTube = contentType === 'youtube' || (link && (link.includes('youtube.
               </div>
             )}
           </DialogTrigger>
-          <DialogContent showCloseButton={false} className="w-[95vw] lg:w-[50vw] max-w-[95vw] lg:max-w-[50vw] lg:min-w-[800px] max-h-[90vh] overflow-y-auto overflow-x-hidden sm:rounded-3xl border-white/10 bg-zinc-950 text-zinc-300 shadow-2xl p-6 md:p-12 gap-0">
+          <DialogContent showCloseButton={false} className="w-[85vw] lg:w-[60vw] max-w-[85vw] lg:max-w-[60vw] lg:min-w-[900px] max-h-[80vh] overflow-y-auto overflow-x-hidden sm:rounded-3xl border-white/10 bg-zinc-950 text-zinc-300 shadow-2xl p-6 md:p-12 gap-0">
             {/* Top Right Actions */}
-            <div className="absolute top-6 right-6 flex items-center space-x-5 z-50 bg-zinc-950/80 backdrop-blur-sm px-2 py-1 rounded-full">
-              <button className="text-zinc-500 hover:text-zinc-300 transition-colors">
+            <div className="absolute top-6 right-6 flex items-center space-x-2 z-50">
+              <button className="text-zinc-500 hover:text-zinc-300 transition-colors p-2 hover:bg-white/5 rounded-full">
                 <Pencil className="w-5 h-5" />
               </button>
-              <button 
+              <button
                 onClick={deleteLinkHandler}
                 disabled={isDeleting}
-                className="text-red-500/70 hover:text-red-500 transition-colors disabled:opacity-50"
+                className="text-zinc-500 hover:text-red-500 transition-colors disabled:opacity-50 p-2 hover:bg-white/5 rounded-full"
               >
                 <Trash2 className="w-5 h-5" />
               </button>
-              <div className="w-px h-5 bg-white/10"></div>
-              <DialogClose className="text-zinc-500 hover:text-zinc-300 transition-colors focus:outline-none">
-                <X className="w-6 h-6" />
+              <DialogClose className="text-zinc-500 hover:text-zinc-300 transition-colors focus:outline-none p-2 hover:bg-white/5 rounded-full">
+                <X className="w-5 h-5" />
                 <span className="sr-only">Close</span>
               </DialogClose>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] gap-8 md:gap-12 mt-4 w-full">
-              
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_380px] gap-8 md:gap-12 mt-4 w-full">
+
               {/* Left Column */}
-              <div className="flex flex-col space-y-6 w-full min-w-0">
-                
+              <div className="flex flex-col space-y-3 w-full min-w-0">
+
                 {/* Image Box */}
-                <div className={`w-full aspect-video rounded-2xl flex items-center justify-center overflow-hidden shadow-sm shrink-0 ${isYouTube ? '' : 'bg-white/5 p-6'}`}>
+                <div className={`w-full aspect-video rounded-2xl flex items-center justify-center overflow-hidden shadow-sm shrink-0 ${isYouTube ? '' : 'bg-white/5'}`}>
                   {isYouTube && youtubeId ? (
                     <iframe
                       width="100%"
@@ -322,7 +320,7 @@ const isYouTube = contentType === 'youtube' || (link && (link.includes('youtube.
                       className="w-full h-full object-cover rounded-2xl"
                     ></iframe>
                   ) : image ? (
-                    <img src={image} alt={title} className="w-full h-full object-contain drop-shadow-sm" />
+                    <img src={image} alt={title} className="w-full h-full object-cover" />
                   ) : (
                     <div className="text-zinc-500 font-medium text-xl">
                       {isNote ? "Note" : "Link"}
@@ -330,31 +328,31 @@ const isYouTube = contentType === 'youtube' || (link && (link.includes('youtube.
                   )}
                 </div>
 
-                {/* Visit Link Button */}
+                {/* Visit Link & Meta Info */}
                 {isNote === false && (
-                  <button 
-                    onClick={openLink}
-                    className="w-full bg-zinc-900 hover:bg-zinc-800 text-zinc-200 py-4 rounded-xl flex items-center justify-center space-x-2 font-medium transition-all shadow-sm ring-1 ring-white/10 shrink-0"
-                  >
-                    <ExternalLink className="w-5 h-5" />
-                    <span>Visit Link</span>
-                  </button>
-                )}
-
-                {/* URL and Date */}
-                {isNote === false && (
-                  <div className="flex flex-col space-y-1.5 px-2">
-                    <div className="flex items-center justify-between text-zinc-500 text-sm w-full overflow-hidden">
-                      <span className="truncate pr-4 min-w-0">{link}</span>
-                      <button className="hover:text-zinc-300 transition-colors shrink-0">
-                        <Copy className="w-3.5 h-3.5" />
+                  <div className="flex flex-col space-y-2 px-1 pt-1">
+                    <div className="flex items-center justify-between">
+                      <button
+                        onClick={openLink}
+                        className="text-zinc-400 hover:text-zinc-200 text-sm font-medium flex items-center space-x-1.5 transition-colors group"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                        <span>Visit original link</span>
+                      </button>
+                      <button className="text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1.5 text-xs font-medium bg-white/5 hover:bg-white/10 px-2 py-1 rounded">
+                        <Copy className="w-3 h-3" />
+                        Copy
                       </button>
                     </div>
-                    {createdAt && (
-                      <div className="text-zinc-600 text-xs">
-                        Saved {new Date(createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </div>
-                    )}
+                    
+                    <div className="flex items-center justify-between text-zinc-600 text-xs w-full overflow-hidden">
+                      <span className="truncate pr-4 min-w-0">{link}</span>
+                      {createdAt && (
+                        <span className="shrink-0 whitespace-nowrap">
+                          {new Date(createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -364,23 +362,23 @@ const isYouTube = contentType === 'youtube' || (link && (link.includes('youtube.
 
               {/* Right Column */}
               <div className="flex flex-col">
-                
+
                 {/* Content Type Badge */}
-                <div className="inline-flex items-center gap-2 bg-zinc-900 ring-1 ring-white/10 text-zinc-300 px-3 py-1.5 rounded-full text-xs font-medium w-fit mb-6 shadow-sm">
+                <div className="inline-flex items-center gap-1.5 text-zinc-400 text-sm font-medium w-fit mb-4">
                   <Globe className="w-4 h-4" />
                   {isNote ? 'Note' : 'Website'}
                 </div>
 
                 {/* Title */}
-                <DialogTitle className="text-3xl md:text-4xl font-bold text-zinc-50 leading-tight mb-8">
+                <DialogTitle className="text-2xl md:text-3xl font-semibold text-zinc-100 leading-tight mb-8">
                   {isNote ? (title === 'Quick Note' ? (description || title) : title) : title}
                 </DialogTitle>
 
                 {/* Notes Section */}
                 {(description || isNote) && (
                   <div className="mb-8">
-                    <h3 className="text-zinc-400 text-sm font-medium mb-3">Notes</h3>
-                    <div className="bg-zinc-900/50 ring-1 ring-white/5 text-zinc-300 p-5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap shadow-inner">
+                    <h3 className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-2">Notes</h3>
+                    <div className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap">
                       {description || (isNote && title === 'Quick Note' && link && !link.match(/^[0-9a-fA-F]{8}-/) ? link : (description || "No notes available."))}
                     </div>
                   </div>
@@ -388,58 +386,58 @@ const isYouTube = contentType === 'youtube' || (link && (link.includes('youtube.
 
                 {/* Tags Section */}
                 <div className="mb-8">
-                  <h3 className="text-zinc-400 text-sm font-medium mb-3">Tags</h3>
-                  <div className="flex flex-wrap items-center gap-3">
+                  <h3 className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-3">Tags</h3>
+                  <div className="flex flex-wrap items-center gap-2">
                     {['Productivity', 'Research'].map(tag => (
-                      <div key={tag} className="bg-zinc-900 ring-1 ring-white/10 hover:ring-white/20 hover:bg-zinc-800 transition-all text-zinc-200 px-4 py-2 rounded-full text-xs font-medium flex items-center gap-2 cursor-pointer shadow-sm">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                      <div key={tag} className="bg-white/5 hover:bg-white/10 transition-colors text-zinc-300 px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 cursor-pointer">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                         {tag}
                       </div>
                     ))}
-                    <button className="bg-zinc-900 hover:bg-zinc-800 ring-1 ring-white/10 text-zinc-400 hover:text-zinc-200 px-4 py-2 rounded-full text-xs font-medium transition-all shadow-sm">
-                      <span className="text-sm leading-none">+</span>
+                    <button className="bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-300 px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1">
+                      <span>+ Add</span>
                     </button>
                   </div>
                 </div>
 
                 {/* Collection Section */}
                 <div className="mb-8">
-                  <h3 className="text-zinc-400 text-sm font-medium mb-3">Collection</h3>
-                  <div className="bg-zinc-900/50 hover:bg-zinc-900/80 ring-1 ring-white/5 hover:ring-white/10 cursor-pointer transition-all p-4 rounded-2xl flex items-center justify-between text-sm shadow-sm">
-                    <div className="flex items-center gap-3 text-zinc-200 font-medium">
-                      <Folder className="w-5 h-5 text-zinc-400" />
+                  <h3 className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-2">Collection</h3>
+                  <div className="group cursor-pointer flex items-center justify-between text-sm -mx-3 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors">
+                    <div className="flex items-center gap-2.5 text-zinc-300">
+                      <Folder className="w-4 h-4 text-zinc-500 group-hover:text-zinc-400 transition-colors" />
                       Linkaroo
                     </div>
-                    <ChevronRight className="w-5 h-5 text-zinc-500" />
+                    <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
                   </div>
                 </div>
 
                 {/* Tasks & Reminders Section */}
                 <div className="mb-8">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <h3 className="text-zinc-400 text-sm font-medium">Tasks & Reminders</h3>
-                      <span className="bg-zinc-800 ring-1 ring-white/10 text-zinc-300 text-xs px-2 py-0.5 rounded-md font-medium">2</span>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-zinc-500 text-xs font-semibold uppercase tracking-wider">Tasks & Reminders</h3>
+                      <span className="bg-white/10 text-zinc-400 text-[10px] px-1.5 py-0.5 rounded font-medium">2</span>
                     </div>
-                    <button className="text-emerald-500 text-sm hover:text-emerald-400 transition-colors font-medium">
+                    <button className="text-zinc-500 hover:text-zinc-300 text-xs font-medium transition-colors">
                       + Add
                     </button>
                   </div>
-                  
-                  <div className="bg-zinc-900/50 ring-1 ring-white/5 rounded-2xl p-2 flex flex-col gap-1 shadow-inner">
+
+                  <div className="flex flex-col gap-1 -mx-2">
                     {[
                       { title: "Review content", date: "Tomorrow" },
                       { title: "Share with team", date: "Next week" }
                     ].map((task, idx) => (
-                      <div key={idx} className="flex items-center gap-4 p-3 rounded-xl hover:bg-zinc-800/80 transition-all group cursor-pointer">
-                        <Circle className="w-5 h-5 text-zinc-500 shrink-0 group-hover:text-zinc-400 transition-colors" />
-                        <span className="text-zinc-200 text-sm font-medium">{task.title}</span>
-                        <div className="ml-auto flex items-center gap-3">
-                          <div className="text-emerald-500/90 text-xs flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
-                            <Calendar className="w-3.5 h-3.5" />
+                      <div key={idx} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors group cursor-pointer">
+                        <Circle className="w-4 h-4 text-zinc-600 group-hover:text-zinc-500 transition-colors shrink-0" />
+                        <span className="text-zinc-300 text-sm">{task.title}</span>
+                        <div className="ml-auto flex items-center gap-2">
+                          <div className="text-emerald-500/80 text-xs flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Calendar className="w-3 h-3" />
                             {task.date}
                           </div>
-                          <MoreVertical className="w-5 h-5 text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <MoreVertical className="w-4 h-4 text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
                       </div>
                     ))}
