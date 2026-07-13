@@ -322,7 +322,7 @@ const LinkCard = ({
                     ></iframe>
                   ) : !isNote && link && !mediaError ? (
                     <img
-                      src={`https://api.microlink.io/?url=${encodeURIComponent(link)}&screenshot=true&screenshot.fullPage=true&meta=false&embed=screenshot.url`}
+                      src={`https://api.microlink.io/?url=${encodeURIComponent(link)}&screenshot=true&screenshot.fullPage=true&waitFor=3000&meta=false&embed=screenshot.url`}
                       alt={title}
                       className="w-full h-auto object-top bg-white"
                       onError={() => setMediaError(true)}
@@ -352,7 +352,7 @@ const LinkCard = ({
                         Copy
                       </button>
                     </div>
-                    
+
                     <div className="flex items-center justify-between text-zinc-600 text-xs w-full overflow-hidden">
                       <span className="truncate pr-4 min-w-0">{link}</span>
                       {createdAt && (
