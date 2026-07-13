@@ -103,7 +103,7 @@ func CreateLink(c *gin.Context) {
 func GetAllLinks(c *gin.Context) {
 	var userLinks []models.UserLink
 	// Need to preload Link since formatLinks expects linkId object
-	if err := db.DB.Preload("Link").Find(&userLinks).Error; err != nil {
+	if err := db.DB.Preload("Link").Preload("Tags").Preload("Tasks").Find(&userLinks).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch links"})
 		return
 	}
@@ -121,7 +121,7 @@ func GetLinksByCollection(c *gin.Context) {
 	}
 
 	var userLinks []models.UserLink
-	if err := db.DB.Preload("Link").Where("collection_id = ?", collectionID).Find(&userLinks).Error; err != nil {
+	if err := db.DB.Preload("Link").Preload("Tags").Preload("Tasks").Where("collection_id = ?", collectionID).Find(&userLinks).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch collection links"})
 		return
 	}
@@ -383,4 +383,77 @@ func DeleteLink(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Link deleted successfully"})
+}
+
+func UpdateLink(c *gin.Context) {
+	linkIDStr := c.Param("linkId")
+	linkID, err := uuid.Parse(linkIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid link ID"})
+		return
+	}
+
+	var req struct {
+		Title        *string                `json:"title"`
+		Description  *string                `json:"description"`
+		CollectionId *string                `json:"collectionId"`
+		Tags         *[]models.Tag          `json:"tags"`
+		Tasks        *[]models.UserLinkTask `json:"tasks"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var userLink models.UserLink
+	if err := db.DB.Preload("Tags").Preload("Tasks").First(&userLink, linkID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Link not found"})
+		return
+	}
+
+	updates := map[string]interface{}{}
+	if req.Title != nil {
+		updates["custom_title"] = req.Title
+	}
+	if req.Description != nil {
+		updates["custom_description"] = req.Description
+	}
+	if req.CollectionId != nil {
+		collectionID, err := uuid.Parse(*req.CollectionId)
+		if err == nil {
+			updates["collection_id"] = collectionID
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid collection ID"})
+			return
+		}
+	}
+
+	if err := db.DB.Model(&userLink).Updates(updates).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update link"})
+		return
+	}
+
+	if req.Tags != nil {
+		db.DB.Model(&userLink).Association("Tags").Replace(*req.Tags)
+	}
+
+	if req.Tasks != nil {
+		// Delete all existing tasks for this link, then recreate from the request
+		db.DB.Where("user_link_id = ?", userLink.ID).Delete(&models.UserLinkTask{})
+		for _, task := range *req.Tasks {
+			newTask := models.UserLinkTask{
+				UserLinkID: userLink.ID,
+				Title:      task.Title,
+				Date:       task.Date,
+				Completed:  task.Completed,
+			}
+			db.DB.Create(&newTask)
+		}
+	}
+
+	db.DB.Preload("Link").Preload("Tags").Preload("Tasks").First(&userLink, userLink.ID)
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": userLink,
+	})
 }

@@ -72,6 +72,18 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
         if (currentUser.data.data) {
           addProfile(currentUser.data.data);
+          
+          try {
+            const tagsResponse = await axios.get(
+              `${process.env.NEXT_PUBLIC_SERVER_API_URL}/tags/get/o/${currentUser.data.data._id}`,
+              { withCredentials: true }
+            );
+            if (tagsResponse.status === 200 && tagsResponse.data?.data) {
+              useProfileStore.getState().setTags(tagsResponse.data.data);
+            }
+          } catch (error) {
+            console.error("Failed to fetch user tags in AppLayout", error);
+          }
         }
       } catch (error) {
         if (error instanceof AxiosError && (error.status === 404 || error.response?.status === 404 || error.status === 401 || error.response?.status === 401)) {

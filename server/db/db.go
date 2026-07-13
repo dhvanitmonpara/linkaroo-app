@@ -34,6 +34,7 @@ func InitDB() {
 		&models.Link{},
 		&models.Collection{},
 		&models.UserLink{},
+		&models.UserLinkTask{},
 	)
 	if err != nil {
 		log.Fatal("Failed to auto-migrate database", err)

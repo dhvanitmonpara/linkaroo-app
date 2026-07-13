@@ -20,7 +20,7 @@ type Collection struct {
 	Type        string         `gorm:"default:'todos'" json:"type"`
 	CreatedAt   time.Time      `json:"createdAt"`
 	UpdatedAt   time.Time      `json:"updatedAt"`
-	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deletedAt"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
 	// Relationships
 	CreatedBy     User    `gorm:"foreignKey:CreatedByID"`

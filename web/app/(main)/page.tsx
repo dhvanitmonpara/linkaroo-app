@@ -240,6 +240,7 @@ const MasonryHomePage = () => {
                                     image={link.image}
                                     type="cards"
                                     isChecked={link.isChecked}
+                                    collectionId={link.collectionId}
                                 />
                             </div>
                         ))}

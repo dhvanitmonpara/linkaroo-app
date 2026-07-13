@@ -54,6 +54,16 @@ type TagType = {
   updatedAt: string;
 };
 
+type TaskType = {
+  _id: string;
+  userLinkId: string;
+  title: string;
+  date: string;
+  completed: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
 type fontOptions =
   | "font-mono"
   | "font-sans"
@@ -97,6 +107,8 @@ type fetchedLinkType = {
   updatedAt: string;
   __v: number;
   contentType?: ContentType;
+  tags?: fetchedTagType[];
+  tasks?: TaskType[];
 };
 
 type fetchedCollectionType = {
@@ -143,4 +155,5 @@ export type {
   CollectionType,
   NotificationType,
   ContentType,
+  TaskType,
 };

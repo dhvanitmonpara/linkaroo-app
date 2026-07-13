@@ -18,7 +18,7 @@ type User struct {
 	Font                 string         `gorm:"default:'font-helvetica'" json:"font"`
 	CreatedAt            time.Time      `json:"createdAt"`
 	UpdatedAt            time.Time      `json:"updatedAt"`
-	DeletedAt            gorm.DeletedAt `gorm:"index" json:"deletedAt"`
+	DeletedAt            gorm.DeletedAt `gorm:"index" json:"-"`
 
 	// Relationships
 	Collections   []Collection  `gorm:"foreignKey:CreatedByID" json:"collections,omitempty"`

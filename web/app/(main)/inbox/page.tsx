@@ -109,6 +109,7 @@ const InboxPage = () => {
               type="todos"
               link={link.link}
               isChecked={link.isChecked}
+              collectionId={link.collectionId}
             />
           ))
         ) : (

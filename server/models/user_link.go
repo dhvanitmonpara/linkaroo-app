@@ -17,10 +17,12 @@ type UserLink struct {
 	IsChecked         bool      `gorm:"default:false" json:"isChecked"`
 	CreatedAt         time.Time `json:"createdAt"`
 	UpdatedAt         time.Time `json:"updatedAt"`
-	DeletedAt         gorm.DeletedAt `gorm:"index" json:"deletedAt"`
+	DeletedAt         gorm.DeletedAt `gorm:"index" json:"-"`
 
 	// Relationships
-	User       User       `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	Collection Collection `gorm:"foreignKey:CollectionID" json:"collection,omitempty"`
-	Link       Link       `gorm:"foreignKey:LinkID" json:"linkId,omitempty"`
+	User       User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	Collection Collection     `gorm:"foreignKey:CollectionID" json:"collection,omitempty"`
+	Link       Link           `gorm:"foreignKey:LinkID" json:"linkId,omitempty"`
+	Tags       []Tag          `gorm:"many2many:user_link_tags;" json:"tags"`
+	Tasks      []UserLinkTask `gorm:"foreignKey:UserLinkID;constraint:OnDelete:CASCADE;" json:"tasks"`
 }

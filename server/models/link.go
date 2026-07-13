@@ -16,5 +16,5 @@ type Link struct {
 	ContentType string    `gorm:"default:'link'" json:"contentType"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
-	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deletedAt"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 }

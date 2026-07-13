@@ -95,6 +95,9 @@ function LinkMapper() {
                   link={link.link}
                   isChecked={link.isChecked}
                   contentType={link.contentType}
+                  collectionId={link.collectionId}
+                  tags={link.tags}
+                  tasks={link.tasks}
                 />
               ))}
           </div>

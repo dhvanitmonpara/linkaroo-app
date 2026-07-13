@@ -56,6 +56,7 @@ func SetupRouter() *gin.Engine {
 		links.GET("/:collectionId", controllers.GetLinksByCollection)
 		links.POST("/:collectionId", controllers.CreateLink)
 		links.POST("/quick-add/:collectionId", controllers.QuickAddLink)
+		links.PATCH("/:linkId", controllers.UpdateLink)
 		links.DELETE("/:linkId", controllers.DeleteLink)
 	}
 
@@ -70,6 +71,8 @@ func SetupRouter() *gin.Engine {
 	tags := api.Group("/tags")
 	tags.Use(middleware.VerifyJWT())
 	{
+		tags.GET("/get/o/:userId", controllers.GetTagsByUser)
+		tags.GET("/get/collections/:collectionId", controllers.GetTagsByCollection)
 		tags.POST("", controllers.CreateTag)
 		tags.DELETE("/:tagId", controllers.DeleteTag)
 	}

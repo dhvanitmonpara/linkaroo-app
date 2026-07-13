@@ -17,6 +17,8 @@ const formatLinks = (links: any) => {
       createdAt: link.createdAt || "",
       updatedAt: link.updatedAt || "",
       __v: link.__v || 0,
+      tags: link.tags || [],
+      tasks: link.tasks || [],
     };
   });
   return formattedLinks;

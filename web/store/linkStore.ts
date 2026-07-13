@@ -25,6 +25,7 @@ interface linkState {
   toggleIsChecked: (LinkId: string, isChecked: boolean) => void;
   currentCollectionItem: fetchedCollectionType | null;
   setCurrentCollectionItem: (item: fetchedCollectionType | null) => void;
+  updateLinkItem: (linkId: string, updates: Partial<fetchedLinkType>) => void;
 }
 
 const useLinkStore = create<linkState>((set) => ({
@@ -109,6 +110,21 @@ const useLinkStore = create<linkState>((set) => ({
   currentCollectionItem: null,
   setCurrentCollectionItem: (listItem) =>
     set({ currentCollectionItem: listItem }),
+  updateLinkItem: (linkId, updates) =>
+    set((state) => ({
+      links: state.links.map((link) =>
+        link._id === linkId ? { ...link, ...updates } : link
+      ),
+      allLinks: state.allLinks.map((link) =>
+        link._id === linkId ? { ...link, ...updates } : link
+      ),
+      cachedLinks: state.cachedLinks.map((list) => ({
+        ...list,
+        links: list.links.map((link) =>
+          link._id === linkId ? { ...link, ...updates } : link
+        ),
+      })),
+    })),
 }));
 
 export default useLinkStore;
