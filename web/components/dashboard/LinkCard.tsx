@@ -105,9 +105,15 @@ const LinkCard = ({
     setEditTitle(title);
     setEditDescription(description || "");
     setCurrentCollectionId(collectionId || "");
+  }, [id, title, description, collectionId]);
+
+  React.useEffect(() => {
     setCurrentTags(initialTags);
+  }, [JSON.stringify(initialTags)]);
+
+  React.useEffect(() => {
     setCurrentTasks(initialTasks);
-  }, [id]);
+  }, [JSON.stringify(initialTasks)]);
 
   // Close tag dropdown on outside click
   React.useEffect(() => {
@@ -208,9 +214,9 @@ const LinkCard = ({
 
   // Toggle tag
   const handleTagToggle = async (tag: fetchedTagType) => {
-    const isActive = currentTags.some(t => t._id === tag._id);
+    const isActive = currentTags.some(t => t.tagname === tag.tagname);
     const newTags = isActive
-      ? currentTags.filter(t => t._id !== tag._id)
+      ? currentTags.filter(t => t.tagname !== tag.tagname)
       : [...currentTags, tag];
     setCurrentTags(newTags);
     await patchLink({ tags: newTags });
@@ -568,7 +574,7 @@ const LinkCard = ({
                   <div className="flex flex-wrap items-center gap-2">
                     {currentTags.map(tag => (
                       <button
-                        key={tag._id}
+                        key={tag.tagname}
                         onClick={() => handleTagToggle(tag)}
                         className="bg-emerald-500/10 hover:bg-red-500/10 text-emerald-400 hover:text-red-400 px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 group"
                         title="Click to remove"
@@ -582,7 +588,22 @@ const LinkCard = ({
                     {/* Tag dropdown */}
                     <div className="relative" ref={tagDropdownRef}>
                       <button
-                        onClick={() => setShowTagDropdown(v => !v)}
+                        onClick={async () => {
+                          setShowTagDropdown(v => !v);
+                          if (!userTags) {
+                            try {
+                              const res = await axios.get(
+                                `${process.env.NEXT_PUBLIC_SERVER_API_URL}/tags/get/o/${profile?._id}`,
+                                { withCredentials: true }
+                              );
+                              if (res.data?.data) {
+                                setTags(res.data.data);
+                              }
+                            } catch (e) {
+                              console.error("Lazy tag fetch failed", e);
+                            }
+                          }
+                        }}
                         className="bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-300 px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1"
                       >
                         <TagIcon className="w-3 h-3" />
@@ -605,10 +626,10 @@ const LinkCard = ({
 
                           {/* Existing user tags */}
                           {filteredUserTags.length > 0 ? filteredUserTags.map(tag => {
-                            const isActive = currentTags.some(t => t._id === tag._id);
+                            const isActive = currentTags.some(t => t.tagname === tag.tagname);
                             return (
                               <button
-                                key={tag._id}
+                                key={tag.tagname}
                                 onClick={() => handleTagToggle(tag)}
                                 className="w-full text-left px-3 py-1.5 text-sm hover:bg-white/5 flex items-center justify-between text-zinc-300 transition-colors"
                               >
