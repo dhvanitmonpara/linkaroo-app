@@ -232,7 +232,7 @@ const MasonryHomePage = () => {
                             <div key={link._id} className="break-inside-avoid mb-2">
                                 <LinkCard
                                     id={link._id}
-                                    title={link.title || link.link}
+                                    title={link.title !== undefined && link.title !== null ? (link.title.match(/^[0-9a-fA-F]{8}-/) ? "" : link.title) : ""}
                                     description={link.description}
                                     createdAt={link.createdAt}
                                     color="bg-black"

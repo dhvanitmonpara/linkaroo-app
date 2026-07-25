@@ -7,6 +7,61 @@ import {
   Globe, Copy, Folder, Calendar, Circle, CheckCircle2,
   ExternalLink, Trash2, X, Plus, Check, Tag as TagIcon, FileText, StickyNote
 } from "lucide-react";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import dynamic from 'next/dynamic';
+
+const MilkdownEditor = dynamic(() => import('./MilkdownEditor'), { ssr: false });
+
+const MarkdownRenderer = ({ content, className }: { content: string; className?: string }) => {
+  if (!content) return null;
+  return (
+    <div className={`prose prose-invert max-w-none text-foreground/90 ${className || ''}`}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          h1: ({ children }) => <h1 className="text-xl font-bold my-1 text-zinc-100">{children}</h1>,
+          h2: ({ children }) => <h2 className="text-lg font-bold my-1 text-zinc-100">{children}</h2>,
+          h3: ({ children }) => <h3 className="text-base font-semibold my-1 text-zinc-200">{children}</h3>,
+          p: ({ children }) => <p className="my-1 leading-relaxed">{children}</p>,
+          ul: ({ children }) => <ul className="list-disc list-inside my-1 space-y-0.5">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal list-inside my-1 space-y-0.5">{children}</ol>,
+          li: ({ children }) => <li className="my-0.5">{children}</li>,
+          blockquote: ({ children }) => (
+            <blockquote className="border-l-2 border-primary/50 pl-3 my-1.5 italic text-zinc-400">
+              {children}
+            </blockquote>
+          ),
+          code: ({ inline, children, ...props }: any) =>
+            inline ? (
+              <code className="bg-white/10 px-1.5 py-0.5 rounded text-xs text-amber-300 font-mono" {...props}>
+                {children}
+              </code>
+            ) : (
+              <pre className="bg-zinc-900/90 border border-white/10 p-3 rounded-xl overflow-x-auto text-xs text-emerald-300 font-mono my-2">
+                <code>{children}</code>
+              </pre>
+            ),
+          a: ({ href, children }) => (
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sky-400 underline hover:text-sky-300 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {children}
+            </a>
+          ),
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
+};
+
+
 
 const PdfViewer = ({ link, title }: { link: string; title: string }) => {
   const [viewMode, setViewMode] = React.useState<'mozilla' | 'google' | 'direct'>('mozilla');
@@ -38,27 +93,24 @@ const PdfViewer = ({ link, title }: { link: string; title: string }) => {
           <div className="flex items-center bg-zinc-800/80 p-0.5 rounded-lg border border-white/5">
             <button
               onClick={() => { setIsLoading(true); setViewMode('mozilla'); }}
-              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${
-                viewMode === 'mozilla' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'hover:text-zinc-200'
-              }`}
+              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${viewMode === 'mozilla' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'hover:text-zinc-200'
+                }`}
               title="Fast Mozilla PDF.js Engine"
             >
               PDF.js
             </button>
             <button
               onClick={() => { setIsLoading(true); setViewMode('google'); }}
-              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${
-                viewMode === 'google' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'hover:text-zinc-200'
-              }`}
+              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${viewMode === 'google' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'hover:text-zinc-200'
+                }`}
               title="Google Docs Cloud Engine"
             >
               Google
             </button>
             <button
               onClick={() => { setIsLoading(true); setViewMode('direct'); }}
-              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${
-                viewMode === 'direct' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'hover:text-zinc-200'
-              }`}
+              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${viewMode === 'direct' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'hover:text-zinc-200'
+                }`}
               title="Direct Native Viewer"
             >
               Direct
@@ -315,7 +367,8 @@ const LinkCard = ({
   const [currentColor, setCurrentColor] = React.useState<NoteColor>((color as NoteColor) || "yellow");
 
   // Editable state
-  const [editTitle, setEditTitle] = React.useState(title);
+  const isUUIDTitle = Boolean(title && title.match(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-/));
+  const [editTitle, setEditTitle] = React.useState((title === "Quick Note" || isUUIDTitle) ? "" : (title || ""));
   const [editDescription, setEditDescription] = React.useState(description || "");
   const [currentCollectionId, setCurrentCollectionId] = React.useState(collectionId || "");
   const [currentTags, setCurrentTags] = React.useState<fetchedTagType[]>(initialTags);
@@ -334,7 +387,8 @@ const LinkCard = ({
 
   // Sync prop changes
   React.useEffect(() => {
-    setEditTitle(title);
+    const isUUID = Boolean(title && title.match(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-/));
+    setEditTitle((title === "Quick Note" || isUUID) ? "" : (title || ""));
     setEditDescription(description || "");
     setCurrentCollectionId(collectionId || "");
   }, [id, title, description, collectionId]);
@@ -535,6 +589,8 @@ const LinkCard = ({
   const isPDF = contentType === 'pdf' || Boolean(link && link.toLowerCase().includes('.pdf'));
   const isYouTube = contentType === 'youtube' || (link && (link.includes('youtube.com') || link.includes('youtu.be')));
   const isNote = contentType === 'note' || title === 'Quick Note' || (!isValidUrl && !image && !isYouTube && !isPDF);
+  const isTitleUUID = Boolean(title && title.match(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-/));
+  const hasTitle = Boolean(title && title.trim() !== "" && title !== "Quick Note" && title !== "Unknown Title" && !isTitleUUID && title.trim() !== (description || "").trim());
   const activeNoteTheme = noteColorMap[currentColor] || noteColorMap.yellow;
 
   const getYouTubeId = (url: string) => {
@@ -616,7 +672,7 @@ const LinkCard = ({
                 <CustomCheckbox
                   color={color}
                   id={id}
-                  title={isNote ? (description ? description.replace(/\n/g, ' ') : (title === 'Quick Note' && link && !link.match(/^[0-9a-fA-F]{8}-/) ? link.replace(/\n/g, ' ') : title)) : title}
+                  title={isNote ? (hasTitle ? `${title}: ${description || ''}` : (description || (link && !link.match(/^[0-9a-fA-F]{8}-/) ? link : ""))) : title}
                   defaultChecked={isChecked}
                   onToggle={() => toggleIsChecked(id, isChecked)}
                 />
@@ -657,15 +713,23 @@ const LinkCard = ({
                   <div className={`w-full p-6 flex flex-col justify-between items-start min-h-[160px] relative overflow-hidden ${activeNoteTheme.bg} border ${activeNoteTheme.border} rounded-3xl transition-all duration-300 shadow-sm hover:shadow-md`}>
                     {/* Folded Corner Accent */}
                     <div className={`absolute top-0 right-6 w-12 h-3.5 ${activeNoteTheme.tape} backdrop-blur-sm rounded-b-sm border-x border-b rotate-2 shadow-xs`} />
-                    
+
                     <div className="w-full space-y-2 relative z-10">
                       <div className={`flex items-center space-x-1.5 ${activeNoteTheme.text} text-[11px] font-bold uppercase tracking-wider`}>
                         <StickyNote className="w-3.5 h-3.5" />
                         <span>Note</span>
                       </div>
-                      <p className="text-base font-medium text-foreground/90 line-clamp-5 w-full text-left whitespace-pre-wrap leading-relaxed">
-                        {description || (title === 'Quick Note' && link && !link.match(/^[0-9a-fA-F]{8}-/) ? link : title)}
-                      </p>
+                      {hasTitle && (
+                        <h4 className="text-base font-semibold text-foreground tracking-tight line-clamp-2 w-full text-left">
+                          {title}
+                        </h4>
+                      )}
+                      <div className="line-clamp-6 w-full text-left overflow-hidden">
+                        <MarkdownRenderer
+                          content={description || (link && !link.match(/^[0-9a-fA-F]{8}-/) ? link : "")}
+                          className={hasTitle ? "text-sm text-muted-foreground" : "text-base font-medium"}
+                        />
+                      </div>
                     </div>
 
                     <div className="w-full flex justify-end mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10">
@@ -712,110 +776,175 @@ const LinkCard = ({
           {isNote ? (
             <DialogContent
               showCloseButton={false}
-              className="w-[92vw] max-w-4xl max-h-[85vh] overflow-y-auto overflow-x-hidden rounded-3xl border-white/10 bg-zinc-950/95 text-zinc-300 shadow-2xl p-6 md:p-8 gap-5 backdrop-blur-xl"
+              className={`w-[92vw] sm:w-[85vw] md:w-[80vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[85vh] overflow-y-auto overflow-x-hidden rounded-2xl md:rounded-3xl border ${activeNoteTheme.border} text-zinc-200 shadow-2xl p-6 md:p-8 flex flex-col gap-6 backdrop-blur-2xl`}
             >
-              {/* Sticky Note Top Control Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
-                <div className="flex items-center space-x-3">
-                  <div className={`p-2 rounded-xl bg-white/5 border border-white/10 ${activeNoteTheme.text} flex items-center justify-center shadow-inner`}>
-                    <StickyNote className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h2 className="font-semibold text-zinc-100 text-base flex items-center gap-2">
-                      <span>Sticky Note</span>
-                      {createdAt && (
-                        <span className="text-[11px] font-normal text-zinc-500 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
-                          {new Date(createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </span>
-                      )}
-                    </h2>
-                    <p className="text-xs text-zinc-500 font-medium">Personal quick capture & thoughts</p>
-                  </div>
-                </div>
+              {/* Sticky Note Styling Elements on the Dialog Container */}
+              <div className={`absolute inset-0 -z-10 bg-zinc-950/95 ${activeNoteTheme.bg}`} />
+              {/* Sticky Note Shutter Tape Theme Selector */}
+              <div
+                className={`group absolute top-0 right-12 sm:right-44 w-28 h-5 hover:h-[310px] -mt-0.5 z-50 ${activeNoteTheme.tape} backdrop-blur-xl rounded-b-md hover:rounded-b-xl border-x border-b border-white/15 shadow-sm hover:shadow-2xl transition-all duration-300 ease-out cursor-pointer flex flex-col justify-between overflow-hidden rotate-1`}
+                title="Change theme accent color"
+              >
+                {/* Full-width Solid Boxy Color Stack (Extra tall blocks, unrolls via translate-y) */}
+                <div className="w-full flex flex-col shrink-0 -translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out">
+                  {(['yellow', 'emerald', 'rose', 'sky', 'purple'] as NoteColor[]).map((c) => {
+                    const isSelected = currentColor === c;
+                    const tickColor = c === 'purple' ? 'text-white' : 'text-zinc-950';
 
-                <div className="flex items-center space-x-3">
-                  {/* Color Palette Selector */}
-                  <div className="flex items-center space-x-2 bg-zinc-900/90 px-3 py-1.5 rounded-full border border-white/10 shadow-sm">
-                    <span className="text-[11px] font-medium text-zinc-400 hidden sm:inline-block mr-1">Accent:</span>
-                    {(['yellow', 'emerald', 'rose', 'sky', 'purple'] as NoteColor[]).map((c) => (
+                    return (
                       <button
                         key={c}
-                        onClick={() => handleColorChange(c)}
-                        className={`w-4 h-4 rounded-full ${noteColorMap[c].dot} transition-all duration-200 hover:scale-125 ${currentColor === c ? 'ring-2 ring-white scale-110 shadow-md' : 'opacity-60 hover:opacity-100'}`}
-                        title={`Set accent color to ${c}`}
-                      />
-                    ))}
-                  </div>
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleColorChange(c);
+                        }}
+                        className={`group/btn w-full h-[58px] ${noteColorMap[c].dot} flex items-center justify-center transition-all duration-150 hover:brightness-105`}
+                      >
+                        <Check
+                          className={`w-4.5 h-4.5 ${tickColor} stroke-[3] transition-all duration-150 ${isSelected
+                            ? 'opacity-100 scale-110'
+                            : 'opacity-0 group-hover/btn:opacity-40 hover:!opacity-80'
+                            }`}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
 
-                  <div className="flex items-center space-x-1 border-l border-white/10 pl-2">
-                    <button
-                      onClick={handleCopyLink}
-                      className="text-zinc-400 hover:text-zinc-200 transition-colors p-2 hover:bg-white/5 rounded-full"
-                      title="Copy content"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </button>
-
-                    <button
-                      onClick={deleteLinkHandler}
-                      disabled={isDeleting}
-                      className="text-zinc-500 hover:text-red-400 transition-colors p-2 hover:bg-white/5 rounded-full"
-                      title="Delete note"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-
-                    <DialogClose className="text-zinc-500 hover:text-zinc-300 transition-colors focus:outline-none p-2 hover:bg-white/5 rounded-full">
-                      <X className="w-4 h-4" />
-                      <span className="sr-only">Close</span>
-                    </DialogClose>
-                  </div>
+                {/* Shutter Pull Tab / Bottom Handle (Flush below colors) */}
+                <div className="w-full h-5 shrink-0 flex items-center justify-center">
+                  <div className="w-7 h-1 rounded-full bg-white/40 group-hover:bg-white/70 transition-colors shadow-xs" />
                 </div>
               </div>
 
-              {/* Main Sticky Note Pad Canvas */}
-              <div className={`w-full min-h-[300px] md:min-h-[360px] p-6 md:p-8 rounded-3xl ${activeNoteTheme.bg} border ${activeNoteTheme.border} flex flex-col justify-between relative overflow-hidden shadow-2xl space-y-4 transition-all duration-300`}>
-                <div className={`absolute top-0 right-12 w-20 h-5 ${activeNoteTheme.tape} backdrop-blur-md rounded-b-md border-x border-b rotate-1 shadow-sm opacity-90`} />
-                
-                <TextareaAutosize
-                  value={editDescription || editTitle}
-                  onChange={(e) => {
-                    setEditDescription(e.target.value);
-                    setEditTitle(e.target.value.split('\n')[0] || "Quick Note");
-                  }}
-                  onBlur={async () => {
-                    await patchLink({ title: editTitle, description: editDescription });
-                  }}
-                  minRows={8}
-                  className="w-full bg-transparent resize-none focus:outline-none text-zinc-100 placeholder-zinc-500/70 text-lg md:text-xl font-medium leading-relaxed"
-                  placeholder="Write your note here..."
+              {/* Minimal Top Control Bar */}
+              <div className="flex items-center justify-between gap-4 border-b border-white/5 pb-3.5">
+                <div className="flex items-center space-x-3">
+                  {createdAt && (
+                    <span className="text-xs text-zinc-500 font-medium">
+                      {new Date(createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                  )}
+                  <span className="text-xs text-zinc-400 font-medium flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-md border border-white/5">
+                    <FileText className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Markdown Canvas</span>
+                  </span>
+                </div>
+
+                {/* Header Action Buttons */}
+                <div className="flex items-center space-x-1">
+                  <button
+                    onClick={handleCopyLink}
+                    className="text-zinc-400 hover:text-zinc-100 transition-colors p-2 hover:bg-white/5 rounded-lg text-xs"
+                    title="Copy note"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    onClick={deleteLinkHandler}
+                    disabled={isDeleting}
+                    className="text-zinc-500 hover:text-red-400 transition-colors p-2 hover:bg-white/5 rounded-lg text-xs"
+                    title="Delete note"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+
+                  <DialogClose className="text-zinc-400 hover:text-zinc-100 transition-colors p-2 hover:bg-white/5 rounded-lg text-xs">
+                    <X className="w-4 h-4" />
+                    <span className="sr-only">Close</span>
+                  </DialogClose>
+                </div>
+              </div>
+
+              {/* Main Writing Canvas */}
+              <div className="flex-1 flex flex-col space-y-4 py-2">
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  onBlur={handleTitleBlur}
+                  placeholder="Note title (optional)"
+                  className="w-full bg-transparent border-b border-white/5 pb-2 focus:border-white/20 outline-none text-xl md:text-2xl font-semibold text-zinc-100 placeholder:text-zinc-600 transition-colors"
                 />
 
-                {/* Bottom Canvas Footer: Stats */}
-                <div className="flex items-center justify-between pt-2 border-t border-white/5 text-xs text-zinc-400/80 font-mono">
-                  <span>Autosaved</span>
-                  <div className="flex items-center space-x-3">
-                    <span>{((editDescription || editTitle) ? (editDescription || editTitle).trim().split(/\s+/).filter(Boolean).length : 0)} words</span>
-                    <span>•</span>
-                    <span>{(editDescription || editTitle).length} chars</span>
-                  </div>
-                </div>
+                <MilkdownEditor
+                  value={editDescription}
+                  onChange={(val) => setEditDescription(val)}
+                  onBlur={handleDescriptionBlur}
+                  placeholder="Write your note here using Markdown..."
+                />
               </div>
 
-              {/* Organization Section: Tags & Collection */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                {/* Tags Section */}
-                <div>
-                  <h3 className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-2.5">Tags</h3>
-                  <div className="flex flex-wrap items-center gap-2">
+              {/* Sleek Minimal Footer Toolbar */}
+              <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/5 pt-4 text-xs">
+                {/* Inline Collection & Tags */}
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Collection Select */}
+                  <div className="flex items-center gap-1.5">
+                    {isCreatingCollection ? (
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 h-8">
+                        <Folder className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                        <input
+                          autoFocus
+                          type="text"
+                          value={newCollectionTitle}
+                          onChange={(e) => setNewCollectionTitle(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleCreateCollection();
+                            if (e.key === "Escape") { setIsCreatingCollection(false); setNewCollectionTitle(""); }
+                          }}
+                          placeholder="Collection..."
+                          className="bg-transparent text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none w-28"
+                        />
+                        <button onClick={handleCreateCollection} className="text-emerald-400 hover:text-emerald-300">
+                          <Check className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => { setIsCreatingCollection(false); setNewCollectionTitle(""); }} className="text-zinc-500 hover:text-zinc-300">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <Select value={currentCollectionId} onValueChange={handleCollectionChange}>
+                        <SelectTrigger className="bg-white/5 border-white/5 text-zinc-300 hover:bg-white/10 h-8 text-xs rounded-lg px-3">
+                          <Folder className="w-3.5 h-3.5 text-zinc-400 mr-1.5 shrink-0" />
+                          <span className="truncate max-w-[150px]">
+                            {currentCollectionId && currentCollectionId !== "__new__"
+                              ? collections.find(c => c._id === currentCollectionId)?.title || "Collection"
+                              : "Collection"}
+                          </span>
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-300">
+                          {collections.map(c => (
+                            <SelectItem key={c._id} value={c._id} className="text-xs hover:bg-white/5">
+                              {c.title}
+                            </SelectItem>
+                          ))}
+                          <div className="border-t border-zinc-800 mt-1 pt-1">
+                            <SelectItem value="__new__" className="text-zinc-400 hover:text-zinc-200 text-xs">
+                              <span className="flex items-center gap-1.5">
+                                <Plus className="w-3 h-3" />
+                                New collection...
+                              </span>
+                            </SelectItem>
+                          </div>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+
+                  <div className="h-3 w-px bg-white/10 hidden sm:block" />
+
+                  {/* Tags */}
+                  <div className="flex flex-wrap items-center gap-1.5">
                     {currentTags.map(tag => (
                       <button
                         key={tag.tagname}
                         onClick={() => handleTagToggle(tag)}
-                        className="bg-white/5 hover:bg-red-500/10 text-zinc-300 hover:text-red-400 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 group border border-white/5"
+                        className="bg-white/5 hover:bg-red-500/10 text-zinc-300 hover:text-red-400 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 group border border-white/5"
                       >
                         <div className={`w-1.5 h-1.5 rounded-full ${activeNoteTheme.dot}`} />
-                        {tag.tagname}
+                        <span>{tag.tagname}</span>
                         <X className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                       </button>
                     ))}
@@ -836,21 +965,21 @@ const LinkCard = ({
                             }
                           }
                         }}
-                        className="bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-300 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 border border-white/5"
+                        className="bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-300 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 border border-white/5"
                       >
                         <TagIcon className="w-3 h-3" />
                         <span>Add tag</span>
                       </button>
 
                       {showTagDropdown && (
-                        <div className="absolute top-full left-0 mt-1 w-56 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl z-50 py-1.5 max-h-56 overflow-y-auto flex flex-col">
+                        <div className="absolute bottom-full left-0 mb-1 w-56 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl z-50 py-1.5 max-h-56 overflow-y-auto flex flex-col">
                           <div className="px-2 pb-1.5 border-b border-zinc-800 mb-1 sticky top-0 bg-zinc-900 z-10">
                             <input
                               type="text"
                               value={tagSearchQuery}
                               onChange={(e) => setTagSearchQuery(e.target.value)}
                               placeholder="Search tags..."
-                              className="w-full bg-transparent text-xs text-zinc-300 placeholder-zinc-500 focus:outline-none px-1 py-1"
+                              className="w-full bg-transparent text-xs text-zinc-300 placeholder-zinc-500 focus:outline-none px-1 py-0.5"
                               autoFocus={!isCreatingTag}
                             />
                           </div>
@@ -909,67 +1038,11 @@ const LinkCard = ({
                   </div>
                 </div>
 
-                {/* Collection Picker */}
-                <div>
-                  <h3 className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-2.5">Collection</h3>
-
-                  {isCreatingCollection ? (
-                    <div className="flex items-center gap-2 p-2 rounded-lg bg-zinc-900/50 border border-zinc-800 h-9">
-                      <Folder className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-                      <input
-                        autoFocus
-                        type="text"
-                        value={newCollectionTitle}
-                        onChange={(e) => setNewCollectionTitle(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleCreateCollection();
-                          if (e.key === "Escape") { setIsCreatingCollection(false); setNewCollectionTitle(""); }
-                        }}
-                        placeholder="Collection title..."
-                        className="flex-1 bg-transparent text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none h-full"
-                      />
-                      <button onClick={handleCreateCollection} className="text-emerald-500 hover:text-emerald-400 transition-colors">
-                        <Check className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={() => { setIsCreatingCollection(false); setNewCollectionTitle(""); }} className="text-zinc-600 hover:text-zinc-400 transition-colors">
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ) : (
-                    <Select value={currentCollectionId} onValueChange={handleCollectionChange}>
-                      <SelectTrigger className="bg-white/5 border-white/5 text-zinc-300 hover:bg-white/10 focus:ring-0 focus:border-zinc-700 h-9 text-xs rounded-lg">
-                        <Folder className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-                        <span className="flex flex-1 text-left line-clamp-1">
-                          {currentCollectionId && currentCollectionId !== "__new__"
-                            ? collections.find(c => c._id === currentCollectionId)?.title || "Select a collection"
-                            : "Select a collection"}
-                        </span>
-                      </SelectTrigger>
-                      <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-300">
-                        {collections.map(c => (
-                          <SelectItem
-                            key={c._id}
-                            value={c._id}
-                            className="hover:bg-white/5 focus:bg-white/5 text-zinc-300 text-xs"
-                          >
-                            {c.title}
-                          </SelectItem>
-                        ))}
-                        <div className="border-t border-zinc-800 mt-1 pt-1">
-                          <SelectItem
-                            value="__new__"
-                            className="text-zinc-400 hover:text-zinc-300 hover:bg-white/5 flex items-center text-xs"
-                          >
-                            <span className="flex items-center gap-1.5">
-                              <Plus className="w-3 h-3" />
-                              Create new collection...
-                            </span>
-                          </SelectItem>
-                        </div>
-                      </SelectContent>
-                    </Select>
-                  )}
-                  {savingField === "collection" && <span className="text-emerald-500 text-[11px] mt-1 block">Saving...</span>}
+                {/* Minimal Stats */}
+                <div className="text-[11px] text-zinc-500 font-mono flex items-center space-x-2">
+                  <span>{((editDescription || editTitle) ? (editDescription || editTitle).trim().split(/\s+/).filter(Boolean).length : 0)} words</span>
+                  <span>•</span>
+                  <span>{(editDescription || editTitle).length} chars</span>
                 </div>
               </div>
             </DialogContent>

@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -169,3 +168,109 @@
     @apply font-sans;
   }
 }
+
+/* ── Milkdown WYSIWYG Editor ───────────────────────────────────── */
+.milkdown-wrapper {
+  width: 100%;
+  min-height: 280px;
+}
+
+.milkdown-wrapper .milkdown {
+  width: 100%;
+  outline: none;
+}
+
+.milkdown-wrapper .milkdown .ProseMirror {
+  outline: none;
+  min-height: 280px;
+  font-size: 1.1rem;
+  line-height: 1.75;
+  color: #f4f4f5;
+  caret-color: #86efac;
+  font-family: inherit;
+  letter-spacing: 0.01em;
+}
+
+/* Placeholder */
+.milkdown-wrapper .milkdown .ProseMirror.is-editor-empty::before,
+.milkdown-wrapper .milkdown .ProseMirror p.is-empty::before {
+  content: attr(data-placeholder);
+  color: #52525b;
+  float: left;
+  height: 0;
+  pointer-events: none;
+  font-size: 1.1rem;
+}
+
+/* Headings */
+.milkdown-wrapper .ProseMirror h1 { font-size: 1.8rem; font-weight: 700; color: #f4f4f5; margin: 0.6em 0 0.3em; line-height: 1.2; }
+.milkdown-wrapper .ProseMirror h2 { font-size: 1.4rem; font-weight: 600; color: #e4e4e7; margin: 0.5em 0 0.25em; }
+.milkdown-wrapper .ProseMirror h3 { font-size: 1.15rem; font-weight: 600; color: #d4d4d8; margin: 0.4em 0 0.2em; }
+
+/* Paragraph */
+.milkdown-wrapper .ProseMirror p { margin: 0.35em 0; }
+
+/* Lists */
+.milkdown-wrapper .ProseMirror ul { list-style: disc; padding-left: 1.4em; margin: 0.3em 0; }
+.milkdown-wrapper .ProseMirror ol { list-style: decimal; padding-left: 1.4em; margin: 0.3em 0; }
+.milkdown-wrapper .ProseMirror li { margin: 0.15em 0; }
+
+/* Task list */
+.milkdown-wrapper .ProseMirror ul[data-type="taskList"] { list-style: none; padding-left: 0.2em; }
+.milkdown-wrapper .ProseMirror ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 0.4em; }
+.milkdown-wrapper .ProseMirror ul[data-type="taskList"] li input { margin-top: 0.3em; accent-color: #86efac; }
+
+/* Blockquote */
+.milkdown-wrapper .ProseMirror blockquote {
+  border-left: 3px solid rgba(134, 239, 172, 0.5);
+  padding-left: 1em;
+  color: #a1a1aa;
+  font-style: italic;
+  margin: 0.5em 0;
+}
+
+/* Inline code */
+.milkdown-wrapper .ProseMirror code {
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  padding: 0.1em 0.4em;
+  font-size: 0.88em;
+  font-family: 'IBM Plex Mono', monospace;
+  color: #fcd34d;
+}
+
+/* Code block */
+.milkdown-wrapper .ProseMirror pre {
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 1em;
+  overflow-x: auto;
+  margin: 0.75em 0;
+}
+.milkdown-wrapper .ProseMirror pre code {
+  background: none;
+  padding: 0;
+  color: #6ee7b7;
+  font-size: 0.88em;
+}
+
+/* Bold & italic */
+.milkdown-wrapper .ProseMirror strong { color: #f4f4f5; font-weight: 700; }
+.milkdown-wrapper .ProseMirror em { color: #d4d4d8; font-style: italic; }
+
+/* Links */
+.milkdown-wrapper .ProseMirror a { color: #38bdf8; text-decoration: underline; text-underline-offset: 2px; }
+.milkdown-wrapper .ProseMirror a:hover { color: #7dd3fc; }
+
+/* Hr */
+.milkdown-wrapper .ProseMirror hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 1em 0; }
+
+/* Table */
+.milkdown-wrapper .ProseMirror table { border-collapse: collapse; width: 100%; margin: 0.5em 0; }
+.milkdown-wrapper .ProseMirror th,
+.milkdown-wrapper .ProseMirror td { border: 1px solid rgba(255,255,255,0.1); padding: 0.4em 0.8em; }
+.milkdown-wrapper .ProseMirror th { background: rgba(255,255,255,0.05); font-weight: 600; }
+
+/* Selection highlight */
+.milkdown-wrapper .ProseMirror ::selection { background: rgba(134, 239, 172, 0.2); }

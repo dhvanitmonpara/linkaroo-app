@@ -147,70 +147,22 @@ func QuickAddLink(c *gin.Context) {
 		return
 	}
 
-	// Determine if it's a valid URL
-	isLink := false
-	u, err := url.ParseRequestURI(req.Link)
-	if err == nil && u.Scheme != "" && u.Host != "" {
-		isLink = true
-	}
+	// Always treat quick input as a text note by default
+	defaultTitle := ""
+	noteDesc := req.Link
+	customTitle := &defaultTitle
+	customDescription := &noteDesc
 
 	var link models.Link
-	var customTitle, customDescription *string
-
-	if isLink {
-		meta := utils.FetchMetadata(req.Link)
-		title := meta.Title
-		if title == "" {
-			title = utils.GenerateTitleFromURL(req.Link)
-		}
-		contentType := utils.DetectContentType(req.Link, meta.Type)
-
-		var existingLinks []models.Link
-		err := db.DB.Unscoped().Where("link = ?", req.Link).Limit(1).Find(&existingLinks).Error
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
-			return
-		}
-
-		if len(existingLinks) == 0 {
-			link = models.Link{
-				LinkURL:     req.Link,
-				Title:       title,
-				Description: meta.Description,
-				Image:       meta.Image,
-				ContentType: contentType,
-			}
-			if err := db.DB.Create(&link).Error; err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create link"})
-				return
-			}
-		} else {
-			link = existingLinks[0]
-			if link.DeletedAt.Valid {
-				// Restore soft-deleted link
-				db.DB.Unscoped().Model(&link).Update("deleted_at", nil)
-			}
-		}
-	} else {
-		// Treat as note
-		noteTitle := req.Link
-		if len(noteTitle) > 100 {
-			noteTitle = noteTitle[:97] + "..."
-		}
-		noteDesc := req.Link
-		customTitle = &noteTitle
-		customDescription = &noteDesc
-
-		link = models.Link{
-			Title:       noteTitle,
-			Description: noteDesc,
-			LinkURL:     uuid.New().String(), // Unique string to satisfy DB constraints
-			ContentType: "note",
-		}
-		if err := db.DB.Create(&link).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create note"})
-			return
-		}
+	link = models.Link{
+		Title:       defaultTitle,
+		Description: noteDesc,
+		LinkURL:     uuid.New().String(), // Unique string to satisfy DB constraints
+		ContentType: "note",
+	}
+	if err := db.DB.Create(&link).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create note"})
+		return
 	}
 
 	// Check if userId is a valid UUID, if not generate a dummy one for now since User port isn't complete maybe
