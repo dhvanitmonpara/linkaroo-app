@@ -110,12 +110,12 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <div className="min-h-screen w-screen">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden">
       <div
         className={`p-0 w-full min-h-[calc(100vh-env(safe-area-inset-top))] ${theme !== "light" ? "text-zinc-100 bg-zinc-950" : "text-zinc-900 bg-zinc-50"} ${profile?.font || ""}`}
       >
         <div
-          className={`w-full}`}
+          className="w-full"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
           <Header />
@@ -123,7 +123,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         {children}
       </div>
       <div
-        className={`fixed z-30 bottom-0 px-0 ${theme !== "light" ? "text-zinc-400 bg-zinc-950" : "text-zinc-500 bg-zinc-50"} sm:!bg-transparent justify-center items-center flex w-screen h-16 lg:hidden`}
+        className={`fixed z-30 bottom-0 px-0 ${theme !== "light" ? "text-zinc-400 bg-zinc-950" : "text-zinc-500 bg-zinc-50"} sm:!bg-transparent justify-center items-center flex w-full max-w-full h-16 lg:hidden`}
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <HorizontalTabs />

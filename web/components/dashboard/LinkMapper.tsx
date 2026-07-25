@@ -34,7 +34,12 @@ function LinkMapper() {
       {links.length > 0 ? (
         <>
           <div
-            className={`grid ${itemType === "todos" && "grid-cols-1 lg:grid-cols-2"} ${(itemType === "banners" || itemType === "cards") && "grid-cols-2 md:grid-cols-3 lg:grid-cols-4"} gap-0`}
+            className={cn(
+              "grid w-full max-w-full gap-3 sm:gap-4",
+              itemType === "todos"
+                ? "grid-cols-1 md:grid-cols-2"
+                : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4"
+            )}
           >
             <ResponsiveDialog
               open={isLinkFormOpen}

@@ -5,7 +5,7 @@ import { FiArrowUpRight } from "react-icons/fi";
 import { BiListPlus } from "react-icons/bi";
 import {
   Globe, Copy, Folder, Calendar, Circle, CheckCircle2,
-  ExternalLink, Trash2, X, Plus, Check, Tag as TagIcon, FileText
+  ExternalLink, Trash2, X, Plus, Check, Tag as TagIcon, FileText, StickyNote
 } from "lucide-react";
 
 const PdfViewer = ({ link, title }: { link: string; title: string }) => {
@@ -245,6 +245,51 @@ const MediaImageWithFallback = ({
   );
 };
 
+export type NoteColor = 'yellow' | 'emerald' | 'rose' | 'sky' | 'purple';
+
+const noteColorMap: Record<NoteColor, { bg: string; border: string; text: string; tape: string; badge: string; dot: string }> = {
+  yellow: {
+    bg: "bg-amber-500/10 dark:bg-amber-500/5",
+    border: "border-amber-500/20 dark:border-amber-500/20 group-hover:border-amber-500/40",
+    text: "text-amber-500 dark:text-amber-400",
+    tape: "bg-amber-500/30 dark:bg-amber-400/25 border-amber-500/40",
+    badge: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+    dot: "bg-amber-400",
+  },
+  emerald: {
+    bg: "bg-emerald-500/10 dark:bg-emerald-500/5",
+    border: "border-emerald-500/20 dark:border-emerald-500/20 group-hover:border-emerald-500/40",
+    text: "text-emerald-500 dark:text-emerald-400",
+    tape: "bg-emerald-500/30 dark:bg-emerald-400/25 border-emerald-500/40",
+    badge: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+    dot: "bg-emerald-400",
+  },
+  rose: {
+    bg: "bg-rose-500/10 dark:bg-rose-500/5",
+    border: "border-rose-500/20 dark:border-rose-500/20 group-hover:border-rose-500/40",
+    text: "text-rose-500 dark:text-rose-400",
+    tape: "bg-rose-500/30 dark:bg-rose-400/25 border-rose-500/40",
+    badge: "bg-rose-500/20 text-rose-300 border-rose-500/30",
+    dot: "bg-rose-400",
+  },
+  sky: {
+    bg: "bg-sky-500/10 dark:bg-sky-500/5",
+    border: "border-sky-500/20 dark:border-sky-500/20 group-hover:border-sky-500/40",
+    text: "text-sky-500 dark:text-sky-400",
+    tape: "bg-sky-500/30 dark:bg-sky-400/25 border-sky-500/40",
+    badge: "bg-sky-500/20 text-sky-300 border-sky-500/30",
+    dot: "bg-sky-400",
+  },
+  purple: {
+    bg: "bg-purple-500/10 dark:bg-purple-500/5",
+    border: "border-purple-500/20 dark:border-purple-500/20 group-hover:border-purple-500/40",
+    text: "text-purple-500 dark:text-purple-400",
+    tape: "bg-purple-500/30 dark:bg-purple-400/25 border-purple-500/40",
+    badge: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+    dot: "bg-purple-400",
+  },
+};
+
 const LinkCard = ({
   id,
   title,
@@ -265,6 +310,9 @@ const LinkCard = ({
   const { tags: userTags, setTags, profile } = useProfileStore();
   const [isDeleting, setIsDeleting] = React.useState(false);
   const pathname = usePathname();
+
+  // Color state
+  const [currentColor, setCurrentColor] = React.useState<NoteColor>((color as NoteColor) || "yellow");
 
   // Editable state
   const [editTitle, setEditTitle] = React.useState(title);
@@ -341,6 +389,11 @@ const LinkCard = ({
     } catch {
       toast.error("Failed to save changes");
     }
+  };
+
+  const handleColorChange = async (newColor: NoteColor) => {
+    setCurrentColor(newColor);
+    await patchLink({ color: newColor });
   };
 
   // Auto-save title on blur
@@ -478,9 +531,11 @@ const LinkCard = ({
     window.open(link, "_blank");
   };
 
-  const isNote = contentType === 'note' || title === 'Quick Note';
-  const isPDF = contentType === 'pdf' || (Boolean(link) && link.toLowerCase().includes('.pdf'));
+  const isValidUrl = Boolean(link && (link.startsWith("http://") || link.startsWith("https://")));
+  const isPDF = contentType === 'pdf' || Boolean(link && link.toLowerCase().includes('.pdf'));
   const isYouTube = contentType === 'youtube' || (link && (link.includes('youtube.com') || link.includes('youtu.be')));
+  const isNote = contentType === 'note' || title === 'Quick Note' || (!isValidUrl && !image && !isYouTube && !isPDF);
+  const activeNoteTheme = noteColorMap[currentColor] || noteColorMap.yellow;
 
   const getYouTubeId = (url: string) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -599,15 +654,24 @@ const LinkCard = ({
             {(type === "banners" || type === "cards") && (
               <div className={`font-medium decoration-2 cursor-pointer ${isNote ? 'text-lg' : 'text-sm font-normal'} flex flex-col justify-start items-center w-full`}>
                 {isNote ? (
-                  <div className="w-full p-6 flex flex-col justify-between items-start min-h-[140px] relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-8 h-8 bg-gradient-to-bl from-emerald-500/20 to-emerald-300/5 dark:from-emerald-400/20 dark:to-emerald-800/10 rounded-bl-2xl rounded-tr-3xl border-l border-b border-emerald-500/20 dark:border-emerald-500/20" />
-                    <p className="text-lg font-medium text-foreground/90 line-clamp-5 w-full text-left whitespace-pre-wrap leading-relaxed relative z-10">
-                      {description || (title === 'Quick Note' && link && !link.match(/^[0-9a-fA-F]{8}-/) ? link : title)}
-                    </p>
+                  <div className={`w-full p-6 flex flex-col justify-between items-start min-h-[160px] relative overflow-hidden ${activeNoteTheme.bg} border ${activeNoteTheme.border} rounded-3xl transition-all duration-300 shadow-sm hover:shadow-md`}>
+                    {/* Folded Corner Accent */}
+                    <div className={`absolute top-0 right-6 w-12 h-3.5 ${activeNoteTheme.tape} backdrop-blur-sm rounded-b-sm border-x border-b rotate-2 shadow-xs`} />
+                    
+                    <div className="w-full space-y-2 relative z-10">
+                      <div className={`flex items-center space-x-1.5 ${activeNoteTheme.text} text-[11px] font-bold uppercase tracking-wider`}>
+                        <StickyNote className="w-3.5 h-3.5" />
+                        <span>Note</span>
+                      </div>
+                      <p className="text-base font-medium text-foreground/90 line-clamp-5 w-full text-left whitespace-pre-wrap leading-relaxed">
+                        {description || (title === 'Quick Note' && link && !link.match(/^[0-9a-fA-F]{8}-/) ? link : title)}
+                      </p>
+                    </div>
+
                     <div className="w-full flex justify-end mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10">
                       <Checkbox
                         onClick={(e) => { e.stopPropagation(); toggleIsChecked(id, isChecked); }}
-                        className="border-emerald-500/50 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 dark:data-[state=checked]:bg-emerald-500 dark:data-[state=checked]:border-emerald-500 dark:data-[state=checked]:text-zinc-900"
+                        className="border-white/20 data-[state=checked]:bg-zinc-100 data-[state=checked]:text-zinc-900"
                       />
                     </div>
                   </div>
@@ -645,140 +709,117 @@ const LinkCard = ({
             )}
           </DialogTrigger>
 
-          <DialogContent
-            showCloseButton={false}
-            className="w-[85vw] lg:w-[60vw] max-w-[85vw] lg:max-w-[60vw] lg:min-w-[900px] max-h-[80vh] overflow-y-auto overflow-x-hidden sm:rounded-3xl border-white/10 bg-zinc-950 text-zinc-300 shadow-2xl p-6 md:p-12 gap-0"
-          >
-            {/* Top Right Actions */}
-            <div className="absolute top-6 right-6 flex items-center space-x-2 z-50">
-              <button
-                onClick={deleteLinkHandler}
-                disabled={isDeleting}
-                className="text-zinc-500 hover:text-red-500 transition-colors disabled:opacity-50 p-2 hover:bg-white/5 rounded-full"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
-              <DialogClose className="text-zinc-500 hover:text-zinc-300 transition-colors focus:outline-none p-2 hover:bg-white/5 rounded-full">
-                <X className="w-5 h-5" />
-                <span className="sr-only">Close</span>
-              </DialogClose>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_380px] gap-8 md:gap-12 mt-4 w-full">
-
-              {/* Left Column */}
-              <div className="flex flex-col space-y-3 w-full min-w-0">
-
-                {/* Media Box */}
-                <div className={`w-full ${isPDF ? 'h-[500px]' : 'aspect-video'} rounded-2xl flex items-start justify-center overflow-y-auto overflow-x-hidden shadow-sm shrink-0 no-scrollbar ${isYouTube || isPDF ? '' : 'bg-white/5'}`}>
-                  {isYouTube && youtubeId ? (
-                    <iframe width="100%" height="100%"
-                      src={`https://www.youtube.com/embed/${youtubeId}`}
-                      title={title} frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen className="w-full h-full object-cover rounded-2xl"
-                    />
-                  ) : isPDF && link ? (
-                    <PdfViewer link={link} title={title} />
-                  ) : !isNote && link ? (
-                    <MediaImageWithFallback
-                      link={link}
-                      image={image}
-                      title={title}
-                      contentType={contentType}
-                      isDialog={true}
-                      containerClassName="w-full h-full flex items-start justify-center"
-                      className="w-full h-auto object-top bg-white"
-                    />
-                  ) : image ? (
-                    <img src={image} alt={title} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="text-zinc-500 font-medium text-xl h-full flex items-center justify-center">
-                      {isNote ? "Note" : "Link"}
-                    </div>
-                  )}
-                </div>
-
-                {/* Visit Link & Meta */}
-                {!isNote && (
-                  <div className="flex flex-col space-y-2 px-1 pt-1">
-                    <div className="flex items-center justify-between">
-                      <button onClick={openLink} className="text-zinc-400 hover:text-zinc-200 text-sm font-medium flex items-center space-x-1.5 transition-colors group">
-                        <ExternalLink className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
-                        <span>Visit original link</span>
-                      </button>
-                      <button onClick={handleCopyLink} className="text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1.5 text-xs font-medium bg-white/5 hover:bg-white/10 px-2 py-1 rounded">
-                        <Copy className="w-3 h-3" />
-                        Copy
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between text-zinc-600 text-xs w-full overflow-hidden">
-                      <span className="truncate pr-4 min-w-0">{link}</span>
+          {isNote ? (
+            <DialogContent
+              showCloseButton={false}
+              className="w-[92vw] max-w-4xl max-h-[85vh] overflow-y-auto overflow-x-hidden rounded-3xl border-white/10 bg-zinc-950/95 text-zinc-300 shadow-2xl p-6 md:p-8 gap-5 backdrop-blur-xl"
+            >
+              {/* Sticky Note Top Control Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+                <div className="flex items-center space-x-3">
+                  <div className={`p-2 rounded-xl bg-white/5 border border-white/10 ${activeNoteTheme.text} flex items-center justify-center shadow-inner`}>
+                    <StickyNote className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="font-semibold text-zinc-100 text-base flex items-center gap-2">
+                      <span>Sticky Note</span>
                       {createdAt && (
-                        <span className="shrink-0 whitespace-nowrap">
+                        <span className="text-[11px] font-normal text-zinc-500 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
                           {new Date(createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </span>
                       )}
-                    </div>
+                    </h2>
+                    <p className="text-xs text-zinc-500 font-medium">Personal quick capture & thoughts</p>
                   </div>
-                )}
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  {/* Color Palette Selector */}
+                  <div className="flex items-center space-x-2 bg-zinc-900/90 px-3 py-1.5 rounded-full border border-white/10 shadow-sm">
+                    <span className="text-[11px] font-medium text-zinc-400 hidden sm:inline-block mr-1">Accent:</span>
+                    {(['yellow', 'emerald', 'rose', 'sky', 'purple'] as NoteColor[]).map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => handleColorChange(c)}
+                        className={`w-4 h-4 rounded-full ${noteColorMap[c].dot} transition-all duration-200 hover:scale-125 ${currentColor === c ? 'ring-2 ring-white scale-110 shadow-md' : 'opacity-60 hover:opacity-100'}`}
+                        title={`Set accent color to ${c}`}
+                      />
+                    ))}
+                  </div>
+
+                  <div className="flex items-center space-x-1 border-l border-white/10 pl-2">
+                    <button
+                      onClick={handleCopyLink}
+                      className="text-zinc-400 hover:text-zinc-200 transition-colors p-2 hover:bg-white/5 rounded-full"
+                      title="Copy content"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      onClick={deleteLinkHandler}
+                      disabled={isDeleting}
+                      className="text-zinc-500 hover:text-red-400 transition-colors p-2 hover:bg-white/5 rounded-full"
+                      title="Delete note"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+
+                    <DialogClose className="text-zinc-500 hover:text-zinc-300 transition-colors focus:outline-none p-2 hover:bg-white/5 rounded-full">
+                      <X className="w-4 h-4" />
+                      <span className="sr-only">Close</span>
+                    </DialogClose>
+                  </div>
+                </div>
               </div>
 
-              {/* Right Column */}
-              <div className="flex flex-col">
+              {/* Main Sticky Note Pad Canvas */}
+              <div className={`w-full min-h-[300px] md:min-h-[360px] p-6 md:p-8 rounded-3xl ${activeNoteTheme.bg} border ${activeNoteTheme.border} flex flex-col justify-between relative overflow-hidden shadow-2xl space-y-4 transition-all duration-300`}>
+                <div className={`absolute top-0 right-12 w-20 h-5 ${activeNoteTheme.tape} backdrop-blur-md rounded-b-md border-x border-b rotate-1 shadow-sm opacity-90`} />
+                
+                <TextareaAutosize
+                  value={editDescription || editTitle}
+                  onChange={(e) => {
+                    setEditDescription(e.target.value);
+                    setEditTitle(e.target.value.split('\n')[0] || "Quick Note");
+                  }}
+                  onBlur={async () => {
+                    await patchLink({ title: editTitle, description: editDescription });
+                  }}
+                  minRows={8}
+                  className="w-full bg-transparent resize-none focus:outline-none text-zinc-100 placeholder-zinc-500/70 text-lg md:text-xl font-medium leading-relaxed"
+                  placeholder="Write your note here..."
+                />
 
-                {/* Content Type Badge */}
-                <div className="inline-flex items-center gap-1.5 text-zinc-400 text-sm font-medium w-fit mb-4">
-                  {isPDF ? <FileText className="w-4 h-4 text-emerald-400" /> : <Globe className="w-4 h-4" />}
-                  {isNote ? 'Note' : isPDF ? 'PDF Document' : 'Website'}
+                {/* Bottom Canvas Footer: Stats */}
+                <div className="flex items-center justify-between pt-2 border-t border-white/5 text-xs text-zinc-400/80 font-mono">
+                  <span>Autosaved</span>
+                  <div className="flex items-center space-x-3">
+                    <span>{((editDescription || editTitle) ? (editDescription || editTitle).trim().split(/\s+/).filter(Boolean).length : 0)} words</span>
+                    <span>•</span>
+                    <span>{(editDescription || editTitle).length} chars</span>
+                  </div>
                 </div>
+              </div>
 
-                {/* Title — auto-resizing textarea */}
-                <DialogTitle className="text-2xl md:text-3xl font-semibold text-zinc-100 leading-tight mb-2 p-0 flex">
-                  <TextareaAutosize
-                    ref={titleRef}
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    onBlur={handleTitleBlur}
-                    minRows={1}
-                    className="w-full bg-transparent resize-none focus:outline-none text-zinc-100 placeholder-zinc-600 hover:bg-white/5 focus:bg-white/5 rounded-lg px-2 py-1 -mx-2 transition-colors leading-tight text-2xl md:text-3xl font-semibold overflow-hidden"
-                    placeholder="Untitled"
-                  />
-                </DialogTitle>
-                {savingField === "title" && <span className="text-emerald-500 text-xs mb-2 block">Saving...</span>}
-
-                {/* Notes — textarea, auto-save */}
-                <div className="mb-6 mt-4">
-                  <h3 className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-2">Notes</h3>
-                  <TextareaAutosize
-                    value={editDescription}
-                    onChange={(e) => setEditDescription(e.target.value)}
-                    onBlur={handleDescriptionBlur}
-                    minRows={3}
-                    className="w-full bg-transparent resize-none focus:outline-none text-zinc-300 text-sm leading-relaxed placeholder-zinc-600 hover:bg-white/5 focus:bg-white/5 rounded-lg px-2 py-1 -mx-2 transition-colors overflow-hidden"
-                    placeholder="Add a note..."
-                  />
-                  {savingField === "description" && <span className="text-emerald-500 text-xs block">Saving...</span>}
-                </div>
-
+              {/* Organization Section: Tags & Collection */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                 {/* Tags Section */}
-                <div className="mb-6">
-                  <h3 className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-3">Tags</h3>
+                <div>
+                  <h3 className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-2.5">Tags</h3>
                   <div className="flex flex-wrap items-center gap-2">
                     {currentTags.map(tag => (
                       <button
                         key={tag.tagname}
                         onClick={() => handleTagToggle(tag)}
-                        className="bg-emerald-500/10 hover:bg-red-500/10 text-emerald-400 hover:text-red-400 px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 group"
-                        title="Click to remove"
+                        className="bg-white/5 hover:bg-red-500/10 text-zinc-300 hover:text-red-400 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 group border border-white/5"
                       >
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 group-hover:bg-red-400 transition-colors" />
+                        <div className={`w-1.5 h-1.5 rounded-full ${activeNoteTheme.dot}`} />
                         {tag.tagname}
                         <X className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                       </button>
                     ))}
 
-                    {/* Tag dropdown */}
                     <div className="relative" ref={tagDropdownRef}>
                       <button
                         onClick={async () => {
@@ -789,24 +830,21 @@ const LinkCard = ({
                                 `${process.env.NEXT_PUBLIC_SERVER_API_URL}/tags/get/o/${profile?._id}`,
                                 { withCredentials: true }
                               );
-                              if (res.data?.data) {
-                                setTags(res.data.data);
-                              }
+                              if (res.data?.data) setTags(res.data.data);
                             } catch (e) {
                               console.error("Lazy tag fetch failed", e);
                             }
                           }
                         }}
-                        className="bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-300 px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1"
+                        className="bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-300 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 border border-white/5"
                       >
                         <TagIcon className="w-3 h-3" />
                         <span>Add tag</span>
                       </button>
 
                       {showTagDropdown && (
-                        <div className="absolute top-full left-0 mt-1 w-52 bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl z-50 py-1 max-h-56 overflow-y-auto flex flex-col">
-                          {/* Search Input */}
-                          <div className="px-2 pb-1 border-b border-zinc-800 mb-1 sticky top-0 bg-zinc-900 z-10">
+                        <div className="absolute top-full left-0 mt-1 w-56 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl z-50 py-1.5 max-h-56 overflow-y-auto flex flex-col">
+                          <div className="px-2 pb-1.5 border-b border-zinc-800 mb-1 sticky top-0 bg-zinc-900 z-10">
                             <input
                               type="text"
                               value={tagSearchQuery}
@@ -817,24 +855,22 @@ const LinkCard = ({
                             />
                           </div>
 
-                          {/* Existing user tags */}
                           {filteredUserTags.length > 0 ? filteredUserTags.map(tag => {
                             const isActive = currentTags.some(t => t.tagname === tag.tagname);
                             return (
                               <button
                                 key={tag.tagname}
                                 onClick={() => handleTagToggle(tag)}
-                                className="w-full text-left px-3 py-1.5 text-sm hover:bg-white/5 flex items-center justify-between text-zinc-300 transition-colors"
+                                className="w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 flex items-center justify-between text-zinc-300 transition-colors"
                               >
                                 <span>{tag.tagname}</span>
-                                {isActive && <Check className="w-3 h-3 text-emerald-500" />}
+                                {isActive && <Check className="w-3.5 h-3.5 text-emerald-500" />}
                               </button>
                             );
                           }) : (
                             <p className="px-3 py-2 text-xs text-zinc-500">No tags found.</p>
                           )}
 
-                          {/* Divider + Create new tag */}
                           <div className="border-t border-zinc-800 mt-1 pt-1">
                             {isCreatingTag ? (
                               <div className="flex items-center gap-1.5 px-2 py-1.5">
@@ -873,9 +909,9 @@ const LinkCard = ({
                   </div>
                 </div>
 
-                {/* Collection — shadcn Select */}
-                <div className="mb-6">
-                  <h3 className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-2">Collection</h3>
+                {/* Collection Picker */}
+                <div>
+                  <h3 className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-2.5">Collection</h3>
 
                   {isCreatingCollection ? (
                     <div className="flex items-center gap-2 p-2 rounded-lg bg-zinc-900/50 border border-zinc-800 h-9">
@@ -890,7 +926,7 @@ const LinkCard = ({
                           if (e.key === "Escape") { setIsCreatingCollection(false); setNewCollectionTitle(""); }
                         }}
                         placeholder="Collection title..."
-                        className="flex-1 bg-transparent text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none h-full"
+                        className="flex-1 bg-transparent text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none h-full"
                       />
                       <button onClick={handleCreateCollection} className="text-emerald-500 hover:text-emerald-400 transition-colors">
                         <Check className="w-3.5 h-3.5" />
@@ -901,7 +937,7 @@ const LinkCard = ({
                     </div>
                   ) : (
                     <Select value={currentCollectionId} onValueChange={handleCollectionChange}>
-                      <SelectTrigger className="bg-zinc-900/50 border-zinc-800 text-zinc-300 hover:bg-zinc-900 focus:ring-0 focus:border-zinc-600 h-9">
+                      <SelectTrigger className="bg-white/5 border-white/5 text-zinc-300 hover:bg-white/10 focus:ring-0 focus:border-zinc-700 h-9 text-xs rounded-lg">
                         <Folder className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
                         <span className="flex flex-1 text-left line-clamp-1">
                           {currentCollectionId && currentCollectionId !== "__new__"
@@ -914,7 +950,7 @@ const LinkCard = ({
                           <SelectItem
                             key={c._id}
                             value={c._id}
-                            className="hover:bg-white/5 focus:bg-white/5 text-zinc-300"
+                            className="hover:bg-white/5 focus:bg-white/5 text-zinc-300 text-xs"
                           >
                             {c.title}
                           </SelectItem>
@@ -922,7 +958,7 @@ const LinkCard = ({
                         <div className="border-t border-zinc-800 mt-1 pt-1">
                           <SelectItem
                             value="__new__"
-                            className="text-zinc-400 hover:text-zinc-300 hover:bg-white/5 flex items-center"
+                            className="text-zinc-400 hover:text-zinc-300 hover:bg-white/5 flex items-center text-xs"
                           >
                             <span className="flex items-center gap-1.5">
                               <Plus className="w-3 h-3" />
@@ -933,87 +969,379 @@ const LinkCard = ({
                       </SelectContent>
                     </Select>
                   )}
-                  {savingField === "collection" && <span className="text-emerald-500 text-xs mt-1 block">Saving...</span>}
+                  {savingField === "collection" && <span className="text-emerald-500 text-[11px] mt-1 block">Saving...</span>}
                 </div>
+              </div>
+            </DialogContent>
+          ) : (
+            <DialogContent
+              showCloseButton={false}
+              className="w-[85vw] lg:w-[60vw] max-w-[85vw] lg:max-w-[60vw] lg:min-w-[900px] max-h-[80vh] overflow-y-auto overflow-x-hidden sm:rounded-3xl border-white/10 bg-zinc-950 text-zinc-300 shadow-2xl p-6 md:p-12 gap-0"
+            >
+              {/* Top Right Actions */}
+              <div className="absolute top-6 right-6 flex items-center space-x-2 z-50">
+                <button
+                  onClick={deleteLinkHandler}
+                  disabled={isDeleting}
+                  className="text-zinc-500 hover:text-red-500 transition-colors disabled:opacity-50 p-2 hover:bg-white/5 rounded-full"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+                <DialogClose className="text-zinc-500 hover:text-zinc-300 transition-colors focus:outline-none p-2 hover:bg-white/5 rounded-full">
+                  <X className="w-5 h-5" />
+                  <span className="sr-only">Close</span>
+                </DialogClose>
+              </div>
 
-                {/* Tasks Section */}
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-zinc-500 text-xs font-semibold uppercase tracking-wider">Tasks</h3>
-                      {currentTasks.length > 0 && (
-                        <span className="bg-white/10 text-zinc-400 text-[10px] px-1.5 py-0.5 rounded font-medium">
-                          {currentTasks.filter(t => !t.completed).length}/{currentTasks.length}
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_380px] gap-8 md:gap-12 mt-4 w-full">
+
+                {/* Left Column */}
+                <div className="flex flex-col space-y-3 w-full min-w-0">
+
+                  {/* Media Box */}
+                  <div className={`w-full ${isPDF ? 'h-[500px]' : 'aspect-video'} rounded-2xl flex items-start justify-center overflow-y-auto overflow-x-hidden shadow-sm shrink-0 no-scrollbar ${isYouTube || isPDF ? '' : 'bg-white/5'}`}>
+                    {isYouTube && youtubeId ? (
+                      <iframe width="100%" height="100%"
+                        src={`https://www.youtube.com/embed/${youtubeId}`}
+                        title={title} frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen className="w-full h-full object-cover rounded-2xl"
+                      />
+                    ) : isPDF && link ? (
+                      <PdfViewer link={link} title={title} />
+                    ) : link ? (
+                      <MediaImageWithFallback
+                        link={link}
+                        image={image}
+                        title={title}
+                        contentType={contentType}
+                        isDialog={true}
+                        containerClassName="w-full h-full flex items-start justify-center"
+                        className="w-full h-auto object-top bg-white"
+                      />
+                    ) : image ? (
+                      <img src={image} alt={title} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="text-zinc-500 font-medium text-xl h-full flex items-center justify-center">
+                        Link
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Visit Link & Meta */}
+                  <div className="flex flex-col space-y-2 px-1 pt-1">
+                    <div className="flex items-center justify-between">
+                      <button onClick={openLink} className="text-zinc-400 hover:text-zinc-200 text-sm font-medium flex items-center space-x-1.5 transition-colors group">
+                        <ExternalLink className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                        <span>Visit original link</span>
+                      </button>
+                      <button onClick={handleCopyLink} className="text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1.5 text-xs font-medium bg-white/5 hover:bg-white/10 px-2 py-1 rounded">
+                        <Copy className="w-3 h-3" />
+                        Copy
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between text-zinc-600 text-xs w-full overflow-hidden">
+                      <span className="truncate pr-4 min-w-0">{link}</span>
+                      {createdAt && (
+                        <span className="shrink-0 whitespace-nowrap">
+                          {new Date(createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </span>
                       )}
                     </div>
-                    <button
-                      onClick={() => setIsAddingTask(true)}
-                      className="text-zinc-500 hover:text-zinc-300 text-xs font-medium transition-colors flex items-center gap-1"
-                    >
-                      <Plus className="w-3 h-3" />
-                      Add
-                    </button>
-                  </div>
-
-                  <div className="flex flex-col gap-1 -mx-2">
-                    {currentTasks.map(task => (
-                      <div key={task._id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors group">
-                        <button onClick={() => handleToggleTask(task._id)} className="shrink-0 text-zinc-600 hover:text-emerald-500 transition-colors">
-                          {task.completed
-                            ? <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                            : <Circle className="w-4 h-4" />
-                          }
-                        </button>
-                        <span className={`text-sm flex-1 ${task.completed ? 'line-through text-zinc-600' : 'text-zinc-300'}`}>
-                          {task.title}
-                        </span>
-                        {task.date && (
-                          <div className="text-emerald-500/80 text-xs flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Calendar className="w-3 h-3" />
-                            {task.date}
-                          </div>
-                        )}
-                        <button onClick={() => handleDeleteTask(task._id)} className="text-zinc-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ))}
-
-                    {/* Add Task Input */}
-                    {isAddingTask && (
-                      <div className="flex items-center gap-2 p-2 rounded-lg bg-white/5">
-                        <Circle className="w-4 h-4 text-zinc-600 shrink-0" />
-                        <input
-                          autoFocus
-                          type="text"
-                          value={newTaskTitle}
-                          onChange={(e) => setNewTaskTitle(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") handleAddTask();
-                            if (e.key === "Escape") { setIsAddingTask(false); setNewTaskTitle(""); }
-                          }}
-                          placeholder="Task title..."
-                          className="flex-1 bg-transparent text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none"
-                        />
-                        <button onClick={handleAddTask} className="text-emerald-500 hover:text-emerald-400 transition-colors">
-                          <Check className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => { setIsAddingTask(false); setNewTaskTitle(""); }} className="text-zinc-600 hover:text-zinc-400 transition-colors">
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
-
-                    {currentTasks.length === 0 && !isAddingTask && (
-                      <p className="text-zinc-600 text-xs px-2">No tasks. Click + Add to get started.</p>
-                    )}
                   </div>
                 </div>
 
+                {/* Right Column */}
+                <div className="flex flex-col min-w-0">
+
+                  {/* Content Type Badge */}
+                  <div className="inline-flex items-center gap-1.5 text-zinc-400 text-sm font-medium w-fit mb-4">
+                    {isPDF ? <FileText className="w-4 h-4 text-emerald-400" /> : <Globe className="w-4 h-4" />}
+                    {isPDF ? 'PDF Document' : 'Website'}
+                  </div>
+
+                  {/* Title — auto-resizing textarea */}
+                  <DialogTitle className="text-2xl md:text-3xl font-semibold text-zinc-100 leading-tight mb-2 p-0 flex">
+                    <TextareaAutosize
+                      ref={titleRef}
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      onBlur={handleTitleBlur}
+                      minRows={1}
+                      className="w-full bg-transparent resize-none focus:outline-none text-zinc-100 placeholder-zinc-600 hover:bg-white/5 focus:bg-white/5 rounded-lg px-2 py-1 -mx-2 transition-colors leading-tight text-2xl md:text-3xl font-semibold overflow-hidden"
+                      placeholder="Untitled"
+                    />
+                  </DialogTitle>
+                  {savingField === "title" && <span className="text-emerald-500 text-xs mb-2 block">Saving...</span>}
+
+                  {/* Notes — textarea, auto-save */}
+                  <div className="mb-6 mt-4">
+                    <h3 className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-2">Notes</h3>
+                    <TextareaAutosize
+                      value={editDescription}
+                      onChange={(e) => setEditDescription(e.target.value)}
+                      onBlur={handleDescriptionBlur}
+                      minRows={3}
+                      className="w-full bg-transparent resize-none focus:outline-none text-zinc-300 text-sm leading-relaxed placeholder-zinc-600 hover:bg-white/5 focus:bg-white/5 rounded-lg px-2 py-1 -mx-2 transition-colors overflow-hidden"
+                      placeholder="Add a note..."
+                    />
+                    {savingField === "description" && <span className="text-emerald-500 text-xs block">Saving...</span>}
+                  </div>
+
+                  {/* Tags Section */}
+                  <div className="mb-6">
+                    <h3 className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-3">Tags</h3>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {currentTags.map(tag => (
+                        <button
+                          key={tag.tagname}
+                          onClick={() => handleTagToggle(tag)}
+                          className="bg-emerald-500/10 hover:bg-red-500/10 text-emerald-400 hover:text-red-400 px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 group"
+                          title="Click to remove"
+                        >
+                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 group-hover:bg-red-400 transition-colors" />
+                          {tag.tagname}
+                          <X className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </button>
+                      ))}
+
+                      {/* Tag dropdown */}
+                      <div className="relative" ref={tagDropdownRef}>
+                        <button
+                          onClick={async () => {
+                            setShowTagDropdown(v => !v);
+                            if (!userTags) {
+                              try {
+                                const res = await axios.get(
+                                  `${process.env.NEXT_PUBLIC_SERVER_API_URL}/tags/get/o/${profile?._id}`,
+                                  { withCredentials: true }
+                                );
+                                if (res.data?.data) {
+                                  setTags(res.data.data);
+                                }
+                              } catch (e) {
+                                console.error("Lazy tag fetch failed", e);
+                              }
+                            }
+                          }}
+                          className="bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-300 px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1"
+                        >
+                          <TagIcon className="w-3 h-3" />
+                          <span>Add tag</span>
+                        </button>
+
+                        {showTagDropdown && (
+                          <div className="absolute top-full left-0 mt-1 w-52 bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl z-50 py-1 max-h-56 overflow-y-auto flex flex-col">
+                            {/* Search Input */}
+                            <div className="px-2 pb-1 border-b border-zinc-800 mb-1 sticky top-0 bg-zinc-900 z-10">
+                              <input
+                                type="text"
+                                value={tagSearchQuery}
+                                onChange={(e) => setTagSearchQuery(e.target.value)}
+                                placeholder="Search tags..."
+                                className="w-full bg-transparent text-xs text-zinc-300 placeholder-zinc-500 focus:outline-none px-1 py-1"
+                                autoFocus={!isCreatingTag}
+                              />
+                            </div>
+
+                            {/* Existing user tags */}
+                            {filteredUserTags.length > 0 ? filteredUserTags.map(tag => {
+                              const isActive = currentTags.some(t => t.tagname === tag.tagname);
+                              return (
+                                <button
+                                  key={tag.tagname}
+                                  onClick={() => handleTagToggle(tag)}
+                                  className="w-full text-left px-3 py-1.5 text-sm hover:bg-white/5 flex items-center justify-between text-zinc-300 transition-colors"
+                                >
+                                  <span>{tag.tagname}</span>
+                                  {isActive && <Check className="w-3 h-3 text-emerald-500" />}
+                                </button>
+                              );
+                            }) : (
+                              <p className="px-3 py-2 text-xs text-zinc-500">No tags found.</p>
+                            )}
+
+                            {/* Divider + Create new tag */}
+                            <div className="border-t border-zinc-800 mt-1 pt-1">
+                              {isCreatingTag ? (
+                                <div className="flex items-center gap-1.5 px-2 py-1.5">
+                                  <input
+                                    autoFocus
+                                    type="text"
+                                    value={newTagName}
+                                    onChange={(e) => setNewTagName(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") handleCreateTag();
+                                      if (e.key === "Escape") { setIsCreatingTag(false); setNewTagName(""); }
+                                    }}
+                                    placeholder="Tag name..."
+                                    className="flex-1 bg-transparent text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none"
+                                  />
+                                  <button onClick={handleCreateTag} className="text-emerald-500 hover:text-emerald-400">
+                                    <Check className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button onClick={() => { setIsCreatingTag(false); setNewTagName(""); }} className="text-zinc-600 hover:text-zinc-400">
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => setIsCreatingTag(true)}
+                                  className="w-full text-left px-3 py-2 text-xs text-zinc-500 hover:text-zinc-300 hover:bg-white/5 flex items-center gap-1.5 transition-colors"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                  Create new tag
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Collection — shadcn Select */}
+                  <div className="mb-6">
+                    <h3 className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-2">Collection</h3>
+
+                    {isCreatingCollection ? (
+                      <div className="flex items-center gap-2 p-2 rounded-lg bg-zinc-900/50 border border-zinc-800 h-9">
+                        <Folder className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                        <input
+                          autoFocus
+                          type="text"
+                          value={newCollectionTitle}
+                          onChange={(e) => setNewCollectionTitle(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleCreateCollection();
+                            if (e.key === "Escape") { setIsCreatingCollection(false); setNewCollectionTitle(""); }
+                          }}
+                          placeholder="Collection title..."
+                          className="flex-1 bg-transparent text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none h-full"
+                        />
+                        <button onClick={handleCreateCollection} className="text-emerald-500 hover:text-emerald-400 transition-colors">
+                          <Check className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => { setIsCreatingCollection(false); setNewCollectionTitle(""); }} className="text-zinc-600 hover:text-zinc-400 transition-colors">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <Select value={currentCollectionId} onValueChange={handleCollectionChange}>
+                        <SelectTrigger className="bg-zinc-900/50 border-zinc-800 text-zinc-300 hover:bg-zinc-900 focus:ring-0 focus:border-zinc-600 h-9">
+                          <Folder className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                          <span className="flex flex-1 text-left line-clamp-1">
+                            {currentCollectionId && currentCollectionId !== "__new__"
+                              ? collections.find(c => c._id === currentCollectionId)?.title || "Select a collection"
+                              : "Select a collection"}
+                          </span>
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-300">
+                          {collections.map(c => (
+                            <SelectItem
+                              key={c._id}
+                              value={c._id}
+                              className="hover:bg-white/5 focus:bg-white/5 text-zinc-300"
+                            >
+                              {c.title}
+                            </SelectItem>
+                          ))}
+                          <div className="border-t border-zinc-800 mt-1 pt-1">
+                            <SelectItem
+                              value="__new__"
+                              className="text-zinc-400 hover:text-zinc-300 hover:bg-white/5 flex items-center"
+                            >
+                              <span className="flex items-center gap-1.5">
+                                <Plus className="w-3 h-3" />
+                                Create new collection...
+                              </span>
+                            </SelectItem>
+                          </div>
+                        </SelectContent>
+                      </Select>
+                    )}
+                    {savingField === "collection" && <span className="text-emerald-500 text-xs mt-1 block">Saving...</span>}
+                  </div>
+
+                  {/* Tasks Section */}
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-zinc-500 text-xs font-semibold uppercase tracking-wider">Tasks</h3>
+                        {currentTasks.length > 0 && (
+                          <span className="bg-white/10 text-zinc-400 text-[10px] px-1.5 py-0.5 rounded font-medium">
+                            {currentTasks.filter(t => !t.completed).length}/{currentTasks.length}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setIsAddingTask(true)}
+                        className="text-zinc-500 hover:text-zinc-300 text-xs font-medium transition-colors flex items-center gap-1"
+                      >
+                        <Plus className="w-3 h-3" />
+                        Add
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col gap-1 -mx-2">
+                      {currentTasks.map(task => (
+                        <div key={task._id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors group">
+                          <button onClick={() => handleToggleTask(task._id)} className="shrink-0 text-zinc-600 hover:text-emerald-500 transition-colors">
+                            {task.completed
+                              ? <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                              : <Circle className="w-4 h-4" />
+                            }
+                          </button>
+                          <span className={`text-sm flex-1 ${task.completed ? 'line-through text-zinc-600' : 'text-zinc-300'}`}>
+                            {task.title}
+                          </span>
+                          {task.date && (
+                            <div className="text-emerald-500/80 text-xs flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Calendar className="w-3 h-3" />
+                              {task.date}
+                            </div>
+                          )}
+                          <button onClick={() => handleDeleteTask(task._id)} className="text-zinc-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* Add Task Input */}
+                      {isAddingTask && (
+                        <div className="flex items-center gap-2 p-2 rounded-lg bg-white/5">
+                          <Circle className="w-4 h-4 text-zinc-600 shrink-0" />
+                          <input
+                            autoFocus
+                            type="text"
+                            value={newTaskTitle}
+                            onChange={(e) => setNewTaskTitle(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleAddTask();
+                              if (e.key === "Escape") { setIsAddingTask(false); setNewTaskTitle(""); }
+                            }}
+                            placeholder="Task title..."
+                            className="flex-1 bg-transparent text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none"
+                          />
+                          <button onClick={handleAddTask} className="text-emerald-500 hover:text-emerald-400 transition-colors">
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button onClick={() => { setIsAddingTask(false); setNewTaskTitle(""); }} className="text-zinc-600 hover:text-zinc-400 transition-colors">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+
+                      {currentTasks.length === 0 && !isAddingTask && (
+                        <p className="text-zinc-600 text-xs px-2">No tasks. Click + Add to get started.</p>
+                      )}
+                    </div>
+                  </div>
+
+                </div>
               </div>
-            </div>
-          </DialogContent>
+            </DialogContent>
+          )}
         </Dialog>
       </ContextMenuTrigger>
 

@@ -5,7 +5,7 @@ function CollectionDashboardPage() {
   return (
     <>
       <div
-        className={`grid xl:grid-cols-7 lg:grid-cols-5 grid-cols-3 gap-4 dark:bg-zinc-900 dark:text-zinc-100`}
+        className={`grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 gap-4 dark:bg-zinc-900 dark:text-zinc-100 w-full max-w-full overflow-x-hidden`}
       >
         <Collections />
         <Links />

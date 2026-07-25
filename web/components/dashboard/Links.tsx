@@ -119,9 +119,9 @@ const Links = () => {
 
   return (
     <div
-      className={`lg:pl-0 px-5 h-full select-none lg:col-span-3 xl:col-span-5 pr-5`}
+      className={`lg:pl-0 px-5 h-full select-none col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-5 pr-5 w-full min-w-0 max-w-full overflow-hidden`}
     >
-      <div className={`md:h-[calc(100vh-5rem)] lg:px-0 px-4 h-[calc(100vh-8rem)] lg:h-[calc(100vh-4.5rem)] overflow-y-scroll w-full space-y-2 no-scrollbar ${font}`}>
+      <div className={`md:h-[calc(100vh-5rem)] lg:px-0 px-4 h-[calc(100vh-8rem)] lg:h-[calc(100vh-4.5rem)] overflow-y-auto w-full max-w-full space-y-2 no-scrollbar ${font}`}>
         <div className="lg:h-2"></div>
         <LinkBanner loading={loading} tags={tags} key={currentCollectionItem._id} />
         <LinkMapper />

@@ -97,7 +97,7 @@ const Collections = ({ className, extraElementClassNames, defaultView = "list" }
 
   return (
     <>
-      <div className={`col-span-2 relative px-7 pb-5 lg:pl-7 space-y-3 no-scrollbar max-h-[calc(100vh-5rem)] ${location.pathname.includes("/dashboard") && "bg-zinc-900 lg:border-r-[1px] lg:!pr-2 lg:pl-3.5 lg:border-zinc-800"}`}>
+      <div className={`col-span-1 md:col-span-1 lg:col-span-2 w-full min-w-0 max-w-full relative px-4 md:px-7 pb-5 lg:pl-7 space-y-3 no-scrollbar max-h-[calc(100vh-5rem)] ${location.pathname.includes("/dashboard") && "bg-zinc-900 lg:border-r-[1px] lg:!pr-2 lg:pl-3.5 lg:border-zinc-800"}`}>
         <div className={`col-span-2 relative lg:px-0 px-4 space-y-3 overflow-y-scroll no-scrollbar !pr-2 h-[calc(100vh-4.5rem)] md:h-auto lg:h-[calc(100vh-4.5rem)] md:space-x-0 md:space-y-2 md:p-4 !gap-2 md:justify-start md:items-start 2xl:grid-cols-1 ${className}`}>
           <div className={`h-2 md:hidden ${extraElementClassNames}`}></div>
           {(location.pathname.includes("/dashboard") || location.pathname.includes("/c")) && <h2 className="pt-8 pb-3 flex justify-between items-center">
