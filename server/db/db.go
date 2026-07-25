@@ -3,11 +3,13 @@ package db
 import (
 	"log"
 	"os"
+	"time"
 
 	"linkaroo-app/server/models"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var DB *gorm.DB
@@ -18,8 +20,20 @@ func InitDB() {
 		dsn = "host=localhost user=postgres password=password dbname=linkaroo port=5432 sslmode=disable TimeZone=UTC"
 	}
 
+	newLogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags),
+		logger.Config{
+			SlowThreshold:             200 * time.Millisecond,
+			LogLevel:                  logger.Warn,
+			IgnoreRecordNotFoundError: true,
+			Colorful:                  true,
+		},
+	)
+
 	var err error
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: newLogger,
+	})
 	if err != nil {
 		log.Fatal("Failed to connect to database", err)
 	}

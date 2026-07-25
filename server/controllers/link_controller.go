@@ -10,7 +10,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 func CreateLink(c *gin.Context) {
@@ -166,28 +165,31 @@ func QuickAddLink(c *gin.Context) {
 		}
 		contentType := utils.DetectContentType(req.Link, meta.Type)
 
-		link = models.Link{}
-		err := db.DB.Unscoped().Where("link = ?", req.Link).First(&link).Error
+		var existingLinks []models.Link
+		err := db.DB.Unscoped().Where("link = ?", req.Link).Limit(1).Find(&existingLinks).Error
 		if err != nil {
-			if err == gorm.ErrRecordNotFound {
-				link = models.Link{
-					LinkURL:     req.Link,
-					Title:       title,
-					Description: meta.Description,
-					Image:       meta.Image,
-					ContentType: contentType,
-				}
-				if err := db.DB.Create(&link).Error; err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create link"})
-					return
-				}
-			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+			return
+		}
+
+		if len(existingLinks) == 0 {
+			link = models.Link{
+				LinkURL:     req.Link,
+				Title:       title,
+				Description: meta.Description,
+				Image:       meta.Image,
+				ContentType: contentType,
+			}
+			if err := db.DB.Create(&link).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create link"})
 				return
 			}
-		} else if link.DeletedAt.Valid {
-			// Restore soft-deleted link
-			db.DB.Unscoped().Model(&link).Update("deleted_at", nil)
+		} else {
+			link = existingLinks[0]
+			if link.DeletedAt.Valid {
+				// Restore soft-deleted link
+				db.DB.Unscoped().Model(&link).Update("deleted_at", nil)
+			}
 		}
 	} else {
 		// Treat as note

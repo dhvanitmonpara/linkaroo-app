@@ -203,6 +203,11 @@ func DetectContentType(targetURL, ogType string) string {
 		return "audio"
 	}
 
+	// PDF files
+	if matched, _ := regexp.MatchString(`\.pdf(\?.*)?$`, lower); matched {
+		return "pdf"
+	}
+
 	// Open Graph type hints
 	if ogType != "" {
 		og := strings.ToLower(ogType)
