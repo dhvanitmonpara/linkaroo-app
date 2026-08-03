@@ -23,7 +23,7 @@ function LinkBanner({ tags, loading }: { tags: string[], loading: boolean }) {
 
   // TODO: create a dropdown along with images and custom image function
   const handleSaveChanges = (
-    e: Event
+    e?: any
   ) => {
     let toastId = "";
     try {
