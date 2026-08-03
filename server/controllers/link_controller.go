@@ -107,7 +107,8 @@ func CreateLink(c *gin.Context) {
 		return
 	}
 
-	meta := utils.FetchMetadata(req.Link)
+	ghToken := GetActiveGitHubTokenForUser(req.UserId)
+	meta := utils.FetchMetadataWithToken(req.Link, ghToken)
 	isReachable := meta.Title != "" || meta.Description != ""
 
 	title := req.Title
@@ -231,7 +232,8 @@ func QuickAddLink(c *gin.Context) {
 	var customDescription *string
 
 	if isLink {
-		meta := utils.FetchMetadata(targetURL)
+		ghToken := GetActiveGitHubTokenForUser(req.UserId)
+		meta := utils.FetchMetadataWithToken(targetURL, ghToken)
 		title := meta.Title
 		if title == "" {
 			title = utils.GenerateTitleFromURL(targetURL)
@@ -315,7 +317,8 @@ func CreateCard(c *gin.Context) {
 
 	var link models.Link
 	if isLink {
-		meta := utils.FetchMetadata(req.Link)
+		ghToken := GetActiveGitHubTokenForUser(req.UserId)
+		meta := utils.FetchMetadataWithToken(req.Link, ghToken)
 		title := req.Title
 		if title == "" {
 			title = meta.Title

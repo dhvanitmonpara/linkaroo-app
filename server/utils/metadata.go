@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -15,6 +17,78 @@ type Metadata struct {
 	Description string
 	Image       string
 	Type        string
+}
+
+func FetchGitHubMetadata(targetURL, token string) (Metadata, bool) {
+	u, err := url.Parse(targetURL)
+	if err != nil || (u.Host != "github.com" && u.Host != "www.github.com") {
+		return Metadata{}, false
+	}
+
+	parts := strings.Split(strings.Trim(u.Path, "/"), "/")
+	if len(parts) < 2 {
+		return Metadata{}, false
+	}
+
+	owner := parts[0]
+	repo := parts[1]
+
+	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/%s", owner, repo)
+	client := &http.Client{Timeout: 10 * time.Second}
+
+	req, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		return Metadata{}, false
+	}
+
+	req.Header.Set("User-Agent", "Linkaroo-App/1.0")
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+
+	if token != "" {
+		cleanToken := strings.TrimSpace(token)
+		if strings.HasPrefix(cleanToken, "Bearer ") {
+			cleanToken = strings.TrimPrefix(cleanToken, "Bearer ")
+		}
+		if strings.HasPrefix(cleanToken, "github_pat_") || strings.HasPrefix(cleanToken, "gho_") || strings.HasPrefix(cleanToken, "ghu_") {
+			req.Header.Set("Authorization", "Bearer "+cleanToken)
+		} else {
+			req.Header.Set("Authorization", "token "+cleanToken)
+		}
+	}
+
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		return Metadata{}, false
+	}
+	defer resp.Body.Close()
+
+	var ghRepo struct {
+		Name        string `json:"name"`
+		FullName    string `json:"full_name"`
+		Description string `json:"description"`
+		Owner       struct {
+			AvatarURL string `json:"avatar_url"`
+		} `json:"owner"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&ghRepo); err != nil {
+		return Metadata{}, false
+	}
+
+	return Metadata{
+		Title:       ghRepo.FullName,
+		Description: ghRepo.Description,
+		Image:       ghRepo.Owner.AvatarURL,
+		Type:        "github-repo",
+	}, true
+}
+
+func FetchMetadataWithToken(targetURL, token string) Metadata {
+	if ghMeta, ok := FetchGitHubMetadata(targetURL, token); ok {
+		return ghMeta
+	}
+	return FetchMetadata(targetURL)
 }
 
 func FetchMetadata(targetURL string) Metadata {

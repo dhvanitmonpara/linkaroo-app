@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -15,6 +16,23 @@ import (
 	"linkaroo-app/server/pkg/connector/models"
 	pipelineModels "linkaroo-app/server/pkg/pipeline/models"
 )
+
+func parseGitHubRepoPath(itemID string) string {
+	clean := strings.TrimSpace(itemID)
+	clean = strings.TrimPrefix(clean, "https://github.com/")
+	clean = strings.TrimPrefix(clean, "http://github.com/")
+	clean = strings.TrimSuffix(clean, ".git")
+	clean = strings.Trim(clean, "/")
+
+	parts := strings.Split(clean, "/")
+	if len(parts) >= 2 {
+		return fmt.Sprintf("/repos/%s/%s", parts[0], parts[1])
+	}
+	if _, err := strconv.ParseInt(clean, 10, 64); err == nil {
+		return fmt.Sprintf("/repositories/%s", clean)
+	}
+	return fmt.Sprintf("/repos/%s", clean)
+}
 
 func applyGitHubHeaders(req *http.Request, token string) {
 	req.Header.Set("User-Agent", "Linkaroo-App/1.0")
@@ -132,7 +150,8 @@ func (g *GitHubConnector) Health(ctx context.Context) models.HealthStatus {
 		}
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, g.baseURL+"/user", nil)
+	// GET /rate_limit is GitHub's scope-agnostic token validation endpoint
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, g.baseURL+"/rate_limit", nil)
 	if err != nil {
 		return models.HealthStatus{
 			Level:        models.HealthStatusDegraded,
@@ -203,7 +222,8 @@ func (g *GitHubConnector) Fetch(ctx context.Context, itemID string) (*models.Nor
 	}
 	g.mu.RUnlock()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/repositories/%s", g.baseURL, itemID), nil)
+	endpointPath := parseGitHubRepoPath(itemID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, g.baseURL+endpointPath, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +236,9 @@ func (g *GitHubConnector) Fetch(ctx context.Context, itemID string) (*models.Nor
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, models.NewConnectorError(models.ErrCodeProviderError, g.instanceID, ProviderGitHub, fmt.Sprintf("github status: %d", resp.StatusCode), false, nil)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		errMsg := fmt.Sprintf("github status %d: %s", resp.StatusCode, string(bodyBytes))
+		return nil, models.NewConnectorError(models.ErrCodeProviderError, g.instanceID, ProviderGitHub, errMsg, false, nil)
 	}
 
 	var repo GitHubRepository
@@ -291,7 +313,9 @@ func (g *GitHubConnector) Sync(ctx context.Context, opts interfaces.SyncOptions,
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return interfaces.SyncResult{}, models.NewConnectorError(models.ErrCodeProviderError, g.instanceID, ProviderGitHub, fmt.Sprintf("sync error: %s", resp.Status), false, nil)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		errMsg := fmt.Sprintf("github API status %d: %s", resp.StatusCode, string(bodyBytes))
+		return interfaces.SyncResult{}, models.NewConnectorError(models.ErrCodeProviderError, g.instanceID, ProviderGitHub, errMsg, false, nil)
 	}
 
 	var repos []GitHubRepository

@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
@@ -143,6 +144,7 @@ func GetUserConnectors(c *gin.Context) {
 type ConnectRequest struct {
 	Provider string `json:"provider"`
 	Token    string `json:"token"`
+	UserId   string `json:"userId"`
 }
 
 // ConnectUserConnector instantiates and connects a connector.
@@ -159,7 +161,11 @@ func ConnectUserConnector(c *gin.Context) {
 		return
 	}
 
-	instanceID := providerUpper + "-" + uuid.New().String()[:8]
+	instanceID := providerUpper + "-default"
+	if req.UserId != "" {
+		instanceID = providerUpper + "-" + strings.TrimSpace(req.UserId)
+	}
+
 	conn, err := GlobalConnectorManager.CreateConnector(providerUpper, instanceID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -271,4 +277,35 @@ func SyncUserConnector(c *gin.Context) {
 		"message": "Sync completed successfully",
 		"data":    res,
 	})
+}
+
+// GetActiveGitHubTokenForUser retrieves the GitHub token for a user if connected.
+func GetActiveGitHubTokenForUser(userID string) string {
+	if GlobalConnectorManager == nil {
+		return ""
+	}
+
+	instanceID := "GITHUB-default"
+	if userID != "" {
+		instanceID = "GITHUB-" + strings.TrimSpace(userID)
+	}
+
+	tokenRec, err := GlobalConnectorManager.TokenStore().GetToken(context.Background(), instanceID)
+	if err == nil && tokenRec != nil && tokenRec.AuthConfig != nil {
+		if t := tokenRec.AuthConfig.GetToken(); t != "" {
+			return t
+		}
+	}
+
+	for _, conn := range GlobalConnectorManager.ListConnectors() {
+		if conn.Provider() == "GITHUB" {
+			tokenRec, err := GlobalConnectorManager.TokenStore().GetToken(context.Background(), conn.ID())
+			if err == nil && tokenRec != nil && tokenRec.AuthConfig != nil {
+				if t := tokenRec.AuthConfig.GetToken(); t != "" {
+					return t
+				}
+			}
+		}
+	}
+	return ""
 }

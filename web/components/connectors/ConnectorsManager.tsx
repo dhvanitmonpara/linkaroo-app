@@ -106,14 +106,20 @@ export default function ConnectorsManager() {
         {
           provider: selectedProvider.id,
           token: tokenInput.trim(),
+          userId: profile._id,
         },
         { withCredentials: true }
       );
 
       if (response.status === 200) {
-        toast.success(`Successfully connected ${selectedProvider.name}!`);
+        toast.success(`Successfully connected ${selectedProvider.name}! Syncing repos...`);
         setIsConnectOpen(false);
-        fetchConnectorData();
+        const connectedData = response.data?.data;
+        if (connectedData?.id) {
+          handleSyncNow(connectedData.id, selectedProvider.name);
+        } else {
+          fetchConnectorData();
+        }
       }
     } catch (err) {
       if (err instanceof AxiosError) {
