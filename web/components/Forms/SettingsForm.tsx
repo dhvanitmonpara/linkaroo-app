@@ -83,8 +83,8 @@ const SettingsForm = ({ afterSubmit }: { afterSubmit?: () => void }) => {
           render={({ field: { onChange, value } }) => (
             <Select
               value={value}
-              onValueChange={(value: themeType) => {
-                onChange(value);
+              onValueChange={(value: any) => {
+                if (value) onChange(value);
               }}
             >
               <SelectTrigger className="text-zinc-100 bg-zinc-800 border-zinc-800 sm:max-w-96">
@@ -122,9 +122,12 @@ const SettingsForm = ({ afterSubmit }: { afterSubmit?: () => void }) => {
           name="font"
           control={control}
           render={({ field: { onChange, value } }) => (
-            <Select value={value} onValueChange={(value: fontOptions) => {
-              onChange(value)
-            }}>
+            <Select
+              value={value}
+              onValueChange={(value: any) => {
+                if (value) onChange(value);
+              }}
+            >
               <SelectTrigger className={`text-zinc-100 bg-zinc-800 border-zinc-800 sm:max-w-96 ${value}`}>
                 <SelectValue placeholder="Select font" />
               </SelectTrigger>
