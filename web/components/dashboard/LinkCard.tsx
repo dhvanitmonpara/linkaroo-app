@@ -63,6 +63,8 @@ const MarkdownRenderer = ({ content, className }: { content: string; className?:
 
 
 
+const embeddabilityCache = new Map<string, boolean>();
+
 const isKnownNonEmbeddable = (url: string): boolean => {
   if (!url) return true;
   try {
@@ -145,16 +147,49 @@ const DocAndWebPreviewer = ({
     )
   );
 
-  const [liveWebFailed, setLiveWebFailed] = React.useState(false);
-
-  const isEmbeddableUrl = React.useMemo(() => {
+  const [isLiveEmbeddable, setIsLiveEmbeddable] = React.useState<boolean | null>(() => {
     if (!link) return false;
     if (isPdf || isGoogleDoc || isOfficeDoc) return false;
     if (isKnownNonEmbeddable(link)) return false;
-    return true;
+    if (embeddabilityCache.has(link)) return embeddabilityCache.get(link)!;
+    return null;
+  });
+
+  React.useEffect(() => {
+    if (!link || isPdf || isGoogleDoc || isOfficeDoc) {
+      setIsLiveEmbeddable(false);
+      return;
+    }
+    if (isKnownNonEmbeddable(link)) {
+      setIsLiveEmbeddable(false);
+      return;
+    }
+    if (embeddabilityCache.has(link)) {
+      setIsLiveEmbeddable(embeddabilityCache.get(link)!);
+      return;
+    }
+
+    let isMounted = true;
+    axios
+      .get(`/api/check-embed?url=${encodeURIComponent(link)}`)
+      .then((res) => {
+        if (!isMounted) return;
+        const canEmbed = Boolean(res.data?.embeddable);
+        embeddabilityCache.set(link, canEmbed);
+        setIsLiveEmbeddable(canEmbed);
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        embeddabilityCache.set(link, false);
+        setIsLiveEmbeddable(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [link, isPdf, isGoogleDoc, isOfficeDoc]);
 
-  const showLiveWebTab = isEmbeddableUrl && !liveWebFailed;
+  const showLiveWebTab = isLiveEmbeddable === true;
 
   const initialMode = isDoc
     ? (isPdf ? "pdf" : "google")
@@ -164,31 +199,12 @@ const DocAndWebPreviewer = ({
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
-    setLiveWebFailed(false);
-    const canLive = !isPdf && !isGoogleDoc && !isOfficeDoc && !isKnownNonEmbeddable(link);
     const nextMode = isDoc
       ? (isPdf ? "pdf" : "google")
-      : (canLive ? "live" : "snapshot");
+      : (isLiveEmbeddable === true ? "live" : "snapshot");
     setMode(nextMode);
     setIsLoading(true);
-  }, [link, isDoc, isPdf, isGoogleDoc, isOfficeDoc]);
-
-  React.useEffect(() => {
-    setIsLoading(true);
-    let timeoutId: NodeJS.Timeout;
-    if (mode === "live") {
-      timeoutId = setTimeout(() => {
-        setIsLoading((loading) => {
-          if (loading) {
-            setLiveWebFailed(true);
-            setMode(isDoc ? (isPdf ? "pdf" : "google") : "snapshot");
-          }
-          return false;
-        });
-      }, 6000);
-    }
-    return () => clearTimeout(timeoutId);
-  }, [mode, isDoc, isPdf]);
+  }, [link, isDoc, isPdf, isGoogleDoc, isOfficeDoc, isLiveEmbeddable]);
 
   const targetUrlForScreenshot = isPdf
     ? `https://docs.google.com/viewer?url=${encodeURIComponent(link)}`
@@ -317,7 +333,8 @@ const DocAndWebPreviewer = ({
               onLoad={() => setIsLoading(false)}
               onError={() => {
                 setIsLoading(false);
-                setLiveWebFailed(true);
+                setIsLiveEmbeddable(false);
+                if (link) embeddabilityCache.set(link, false);
                 setMode(isDoc ? (isPdf ? "pdf" : "google") : "snapshot");
               }}
               className="w-full h-full min-h-[460px] border-0 rounded-b-2xl bg-white"

@@ -21,6 +21,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useAuth, useUser } from "@clerk/nextjs";
+import ConnectorsManager from "@/components/connectors/ConnectorsManager";
+import { Plug } from "lucide-react";
 import { FiCheck, FiX } from "react-icons/fi";
 import { FiUser, FiSettings, FiMessageSquare, FiLogOut } from "react-icons/fi";
 
@@ -74,11 +76,25 @@ const ProfileCard = () => {
           onClose={(value) => value !== true && setIsOpen(false)}
           trigger={
             <div className="flex items-center gap-2">
+              <Plug className="w-4 h-4 text-indigo-400" /> Integrations & Connectors
+            </div>
+          }
+          title="Third-Party Data Connectors"
+          description="Mount external services like GitHub, Google Drive, Notion, Slack, and Spotify."
+          contentClassName="sm:max-w-3xl max-h-[85vh] overflow-y-auto"
+        >
+          <ConnectorsManager />
+        </DialogContainer>
+
+        <DialogContainer
+          onClose={(value) => value !== true && setIsOpen(false)}
+          trigger={
+            <div className="flex items-center gap-2">
               <FiSettings /> Settings
             </div>
           }
           title="Settings"
-          description="Are you sure you want to logout?"
+          description="Update account settings"
         >
           <SettingsForm afterSubmit={() => setIsOpen(false)} />
         </DialogContainer>
@@ -133,19 +149,21 @@ const DialogContainer = ({
   title,
   description,
   onClose = null,
+  contentClassName = "sm:max-w-96",
 }: {
   children: ReactNode;
   trigger: ReactNode;
   title: string;
   description: string;
   onClose?: ((value: boolean) => void) | null;
+  contentClassName?: string;
 }) => {
   return (
     <Dialog onOpenChange={(v) => onClose && onClose(v)}>
       <DialogTrigger className="px-2 py-1.5 text-sm text-start bg-transparent hover:bg-accent hover:text-accent-foreground w-full rounded-sm cursor-pointer outline-none transition-colors">
         {trigger}
       </DialogTrigger>
-      <DialogContent aria-hidden className="sm:max-w-96">
+      <DialogContent aria-hidden className={contentClassName}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>

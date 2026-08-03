@@ -1,6 +1,6 @@
 "use client";
 
-import { Collections } from "@/components/dashboard";
+import { Collections, ProcessingMetadataCard } from "@/components/dashboard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { fetchedLinkType } from "@/lib/types";
@@ -21,10 +21,12 @@ const DashboardPage = () => {
     const { user } = useUser()
 
     const [loading, setLoading] = useState(false)
+    const [processingUrl, setProcessingUrl] = useState("")
 
     const quickAddHandler = async ({ url }: { url: string; }) => {
         try {
             setLoading(true);
+            setProcessingUrl(url);
 
             const response = await axios.post(
                 `${process.env.NEXT_PUBLIC_SERVER_API_URL}/links/quick-add/${inbox?._id}`,
@@ -69,6 +71,7 @@ const DashboardPage = () => {
             }
         } finally {
             setLoading(false);
+            setProcessingUrl("");
             setInput("")
         }
     }
@@ -103,6 +106,11 @@ const DashboardPage = () => {
                         {loading ? (<Loader2 className="animate-spin" />) : "Add"}
                     </Button>
                 </form>
+                {loading && (
+                    <div className="w-full max-w-md px-5">
+                        <ProcessingMetadataCard url={processingUrl} />
+                    </div>
+                )}
             </div>
             <div className="px-0 w-full sm:px-24 xl:px-56 2xl-px-64 py-8 pt-6 sm:pt-12 md:pt-24">
                 <Collections defaultView="grid" className="!h-auto md:grid md:grid-cols-2 2xl:!grid-cols-3" extraElementClassNames="hidden" />

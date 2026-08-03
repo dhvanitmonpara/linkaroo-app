@@ -1,0 +1,119 @@
+package test
+
+import (
+	"context"
+	"testing"
+
+	"linkaroo-app/server/pkg/pipeline"
+	"linkaroo-app/server/pkg/pipeline/extractor"
+	"linkaroo-app/server/pkg/pipeline/models"
+)
+
+func TestPipelineIntegration(t *testing.T) {
+	fetcher := extractor.NewMemoryHTTPFetcher()
+
+	// Preload mock pages for end-to-end integration tests
+	fetcher.HTMLMap["https://www.youtube.com/watch?v=dQw4w9WgXcQ"] = `
+		<html><head>
+			<title>Rick Astley - Never Gonna Give You Up - YouTube</title>
+			<meta property="og:description" content="Official music video">
+			<meta property="og:image" content="https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg">
+		</head><body></body></html>
+	`
+
+	fetcher.HTMLMap["https://www.amazon.com/dp/B08N5WRWNW"] = `
+		<html><head>
+			<title>Clean Code: A Handbook of Agile Software Craftsmanship: Amazon.com</title>
+		</head><body>
+			<span>Paperback</span>
+			<a class="a-link-normal author">Robert C. Martin</a>
+		</body></html>
+	`
+
+	fetcher.HTMLMap["https://www.imdb.com/title/tt0111161/"] = `
+		<html><head>
+			<title>The Shawshank Redemption (1994) - IMDb</title>
+			<meta property="og:description" content="Chronicles the experiences of a formerly successful banker...">
+			<meta property="og:image" content="https://m.media-amazon.com/images/M/poster.jpg">
+		</head><body></body></html>
+	`
+
+	pipe := pipeline.NewPipeline(fetcher)
+	ctx := context.Background()
+
+	t.Run("E2E YouTube Detection and Extraction", func(t *testing.T) {
+		item := models.RawItem{URL: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}
+		res, err := pipe.Process(ctx, item)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if res.Source != models.SourceYouTube {
+			t.Errorf("Source = %v, want YOUTUBE", res.Source)
+		}
+		if res.CanonicalType != models.MediaTypeVideo {
+			t.Errorf("CanonicalType = %v, want Video", res.CanonicalType)
+		}
+		if res.Title != "Rick Astley - Never Gonna Give You Up" {
+			t.Errorf("Title = %v", res.Title)
+		}
+	})
+
+	t.Run("E2E Amazon Book Subtype Detection and Extraction", func(t *testing.T) {
+		item := models.RawItem{URL: "https://www.amazon.com/dp/B08N5WRWNW"}
+		res, err := pipe.Process(ctx, item)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if res.Source != models.SourceAmazon {
+			t.Errorf("Source = %v, want AMAZON", res.Source)
+		}
+		if res.CanonicalType != models.MediaTypeBook {
+			t.Errorf("CanonicalType = %v, want Book", res.CanonicalType)
+		}
+	})
+
+	t.Run("E2E IMDb Movie Detection and Extraction", func(t *testing.T) {
+		item := models.RawItem{URL: "https://www.imdb.com/title/tt0111161/"}
+		res, err := pipe.Process(ctx, item)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if res.Source != models.SourceIMDb {
+			t.Errorf("Source = %v, want IMDB", res.Source)
+		}
+		if res.CanonicalType != models.MediaTypeMovie {
+			t.Errorf("CanonicalType = %v, want Movie", res.CanonicalType)
+		}
+	})
+
+	t.Run("E2E Local PDF Upload Detection and Extraction", func(t *testing.T) {
+		item := models.RawItem{Filename: "report.pdf", MIMEType: "application/pdf", Payload: []byte("%PDF-1.4 report content")}
+		res, err := pipe.Process(ctx, item)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if res.Source != models.SourceLocalPDF {
+			t.Errorf("Source = %v, want LOCAL_PDF", res.Source)
+		}
+		if res.CanonicalType != models.MediaTypePDF {
+			t.Errorf("CanonicalType = %v, want PDF", res.CanonicalType)
+		}
+	})
+
+	t.Run("E2E Text Note Detection and Extraction", func(t *testing.T) {
+		item := models.RawItem{Text: "Ideas for Linkaroo:\n- Implement media pipeline\n- Add vector search"}
+		res, err := pipe.Process(ctx, item)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if res.Source != models.SourceText {
+			t.Errorf("Source = %v, want TEXT", res.Source)
+		}
+		if res.CanonicalType != models.MediaTypeNote {
+			t.Errorf("CanonicalType = %v, want Note", res.CanonicalType)
+		}
+		if res.Title != "Ideas for Linkaroo:" {
+			t.Errorf("Title = %v", res.Title)
+		}
+	})
+}

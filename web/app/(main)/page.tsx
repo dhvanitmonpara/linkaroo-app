@@ -11,7 +11,7 @@ import useLinkStore from "@/store/linkStore";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { LinkCard } from "@/components/dashboard";
+import { LinkCard, ProcessingMetadataCard } from "@/components/dashboard";
 import { fetchedLinkType } from "@/lib/types";
 import formatLinks from "@/utils/formatLinks";
 
@@ -23,6 +23,7 @@ const MasonryHomePage = () => {
     const { user } = useUser();
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
+    const [processingUrl, setProcessingUrl] = useState("");
     const [fetchingLinks, setFetchingLinks] = useState(true);
 
     useEffect(() => {
@@ -86,6 +87,7 @@ const MasonryHomePage = () => {
     const quickAddHandler = async ({ url }: { url: string; }) => {
         try {
             setLoading(true);
+            setProcessingUrl(url);
             let targetCollectionId = inbox?._id || (inbox as any)?.ID;
 
             if (!targetCollectionId) {
@@ -164,6 +166,7 @@ const MasonryHomePage = () => {
             }
         } finally {
             setLoading(false);
+            setProcessingUrl("");
             setInput("");
         }
     };
@@ -228,6 +231,9 @@ const MasonryHomePage = () => {
                                 </div>
                             </form>
                         </div>
+                        {loading && (
+                            <ProcessingMetadataCard url={processingUrl} />
+                        )}
                         {allLinks.map((link) => (
                             <div key={link._id} className="break-inside-avoid mb-2">
                                 <LinkCard

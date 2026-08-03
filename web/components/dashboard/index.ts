@@ -8,6 +8,7 @@ import LinkMapper from "./LinkMapper";
 import Links from "./Links";
 import LinkModal from "./LinkModal";
 import PrivateCollectionGuestView from "./PrivateCollectionGuestView";
+import ProcessingMetadataCard from "./ProcessingMetadataCard";
 
 export {
   CollectionActionButtons,
@@ -19,5 +20,6 @@ export {
   LinkCard,
   LinkModal,
   Links,
-  PrivateCollectionGuestView
+  PrivateCollectionGuestView,
+  ProcessingMetadataCard
 }

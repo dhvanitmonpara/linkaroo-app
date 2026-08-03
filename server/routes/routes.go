@@ -77,5 +77,16 @@ func SetupRouter() *gin.Engine {
 		tags.DELETE("/:tagId", controllers.DeleteTag)
 	}
 
+	// Connector Platform Routes
+	connectors := api.Group("/connectors")
+	connectors.Use(middleware.VerifyJWT())
+	{
+		connectors.GET("/providers", controllers.GetConnectorProviders)
+		connectors.GET("", controllers.GetUserConnectors)
+		connectors.POST("/connect", controllers.ConnectUserConnector)
+		connectors.POST("/:id/disconnect", controllers.DisconnectUserConnector)
+		connectors.POST("/:id/sync", controllers.SyncUserConnector)
+	}
+
 	return r
 }

@@ -20,6 +20,8 @@ import useCollectionsStore from "@/store/collectionStore";
 import useProfileStore from "@/store/profileStore";
 import { debounce } from "lodash";
 import { CollectionType } from "@/lib/types";
+import { useConnectorDetection } from "@/hooks/useConnectorDetection";
+import ConnectorPromptModal from "@/components/connectors/ConnectorPromptModal";
 
 const searchMovieDatabase = async (title: string, type: "movies" | "tv" | "multi" | "person") => {
   try {
@@ -134,10 +136,17 @@ const CreateLinkBar: React.FC<CreateLinkBarProps> = ({
     },
   });
 
-  const handleLinkCreation = async (data: HandleLinkCreationType) => {
+  const {
+    promptOpen,
+    targetApp,
+    checkUrlAndPrompt,
+    handleContinueAdd,
+    handleClose,
+  } = useConnectorDetection();
+
+  const submitLinkApi = async (data: HandleLinkCreationType) => {
     try {
       setLoading(true);
-      console.log("runnnnn")
       const parentList = collections.find((list) => list._id === data.collection);
 
       if (!data.collection || !parentList) {
@@ -162,7 +171,7 @@ const CreateLinkBar: React.FC<CreateLinkBarProps> = ({
         toast.error("Failed to add link");
       }
 
-      if (data.collection == links[0].collectionId) {
+      if (data.collection == links[0]?.collectionId) {
         addLinkItem(link.data.data);
       }
 
@@ -170,7 +179,7 @@ const CreateLinkBar: React.FC<CreateLinkBarProps> = ({
 
     } catch (error) {
       if (error instanceof AxiosError) {
-        toast.error(error.message)
+        toast.error(error.message);
       } else {
         console.error(error);
         toast.error("Error while searching links");
@@ -180,6 +189,12 @@ const CreateLinkBar: React.FC<CreateLinkBarProps> = ({
       navigate.push(`/collections/${data.collection}`);
       afterSubmit && afterSubmit();
     }
+  };
+
+  const handleLinkCreation = (data: HandleLinkCreationType) => {
+    checkUrlAndPrompt(identifier, () => {
+      submitLinkApi(data);
+    });
   };
 
   const debouncedSearchQuery = useMemo(
@@ -390,6 +405,13 @@ const CreateLinkBar: React.FC<CreateLinkBarProps> = ({
           </div>
         )}
       </div>}
+
+      <ConnectorPromptModal
+        open={promptOpen}
+        app={targetApp}
+        onClose={handleClose}
+        onContinueAdd={handleContinueAdd}
+      />
     </div>
   );
 };

@@ -274,3 +274,25 @@
 
 /* Selection highlight */
 .milkdown-wrapper .ProseMirror ::selection { background: rgba(134, 239, 172, 0.2); }
+
+/* Laser Scan Animation for Linkaroo Metadata Pipeline */
+@keyframes laser-scan {
+  0% {
+    top: 0%;
+    opacity: 0.1;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0.1;
+  }
+}
+
+.animate-laser-scan {
+  animation: laser-scan 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

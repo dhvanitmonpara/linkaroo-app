@@ -21,6 +21,8 @@ import useLinkStore from "@/store/linkStore";
 import useCollectionsStore from "@/store/collectionStore";
 import useProfileStore from "@/store/profileStore";
 import { FaCircleInfo } from "react-icons/fa6";
+import { useConnectorDetection } from "@/hooks/useConnectorDetection";
+import ConnectorPromptModal from "@/components/connectors/ConnectorPromptModal";
 
 type CreateLinkFormProps = {
   collectionTitle?: string;
@@ -69,22 +71,21 @@ const CreateLinkForm: React.FC<CreateLinkFormProps> = ({
     },
   });
 
-  const handleLinkCreation = async (data: HandleLinkCreationType) => {
+  const {
+    promptOpen,
+    targetApp,
+    checkUrlAndPrompt,
+    handleContinueAdd,
+    handleClose,
+  } = useConnectorDetection();
+
+  const submitLinkApi = async (data: HandleLinkCreationType, validUrl: string) => {
     try {
       setLoading(true);
 
       const parentList = collections.find((list) => list._id === data.collection);
-
       if (!data.collection || !parentList) {
         toast.error("Invalid list");
-        return;
-      }
-      console.log(data.link)
-
-      const validUrl = isValidUrl(data.link);
-
-      if (!validUrl) {
-        toast.error("Invalid URL");
         return;
       }
 
@@ -103,29 +104,41 @@ const CreateLinkForm: React.FC<CreateLinkFormProps> = ({
 
       if (!link.data.data.data) {
         toast.error("Failed to add link");
-        return
+        return;
       }
 
       if (data.collection == currentCollectionItem?._id) addLinkItem(link.data.data.data);
       if (!link.data.data.isLinkReachable) {
         toast("Link is not reachable", {
           icon: <FaCircleInfo />,
-        })
+        });
       }
       addCachedLinkItem(data.collection, link.data.data.data);
 
     } catch (error) {
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message || error.message)
+        toast.error(error.response?.data.message || error.message);
       } else {
         console.error(error);
-        toast.error("Error while creating link")
+        toast.error("Error while creating link");
       }
     } finally {
       setLoading(false);
       navigate.push(`/dashboard/c/${data.collection}`);
-      afterSubmit && afterSubmit()
+      afterSubmit && afterSubmit();
     }
+  };
+
+  const handleLinkCreation = (data: HandleLinkCreationType) => {
+    const validUrl = isValidUrl(data.link);
+    if (!validUrl) {
+      toast.error("Invalid URL");
+      return;
+    }
+
+    checkUrlAndPrompt(validUrl, () => {
+      submitLinkApi(data, validUrl);
+    });
   };
 
   return (
@@ -194,6 +207,13 @@ const CreateLinkForm: React.FC<CreateLinkFormProps> = ({
           </Button>
         )}
       </form>
+
+      <ConnectorPromptModal
+        open={promptOpen}
+        app={targetApp}
+        onClose={handleClose}
+        onContinueAdd={handleContinueAdd}
+      />
     </div>
   );
 };

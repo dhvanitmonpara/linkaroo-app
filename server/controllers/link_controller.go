@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -12,7 +13,74 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
+
+func getOrCreateLink(targetURL, title, description, image, contentType string) (*models.Link, error) {
+	var link models.Link
+	err := db.DB.Unscoped().Where("link = ?", targetURL).First(&link).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			link = models.Link{
+				LinkURL:     targetURL,
+				Title:       title,
+				Description: description,
+				Image:       image,
+				ContentType: contentType,
+			}
+			if err := db.DB.Create(&link).Error; err != nil {
+				return nil, err
+			}
+			return &link, nil
+		}
+		return nil, err
+	}
+
+	if link.DeletedAt.Valid {
+		db.DB.Unscoped().Model(&link).Updates(map[string]interface{}{
+			"deleted_at":   nil,
+			"title":        title,
+			"description":  description,
+			"image":        image,
+			"content_type": contentType,
+		})
+		link.DeletedAt = gorm.DeletedAt{}
+	}
+
+	return &link, nil
+}
+
+func getOrCreateUserLink(userID, collectionID, linkID uuid.UUID, customTitle, customDescription *string) (*models.UserLink, error) {
+	var userLink models.UserLink
+	err := db.DB.Unscoped().Where("user_id = ? AND collection_id = ? AND link_id = ?", userID, collectionID, linkID).First(&userLink).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			userLink = models.UserLink{
+				UserID:            userID,
+				CollectionID:      collectionID,
+				LinkID:            linkID,
+				CustomTitle:       customTitle,
+				CustomDescription: customDescription,
+			}
+			if err := db.DB.Create(&userLink).Error; err != nil {
+				return nil, err
+			}
+			return &userLink, nil
+		}
+		return nil, err
+	}
+
+	if userLink.DeletedAt.Valid {
+		db.DB.Unscoped().Model(&userLink).Updates(map[string]interface{}{
+			"deleted_at":         nil,
+			"custom_title":       customTitle,
+			"custom_description": customDescription,
+		})
+		userLink.DeletedAt = gorm.DeletedAt{}
+	}
+
+	return &userLink, nil
+}
 
 func CreateLink(c *gin.Context) {
 	collectionIDStr := c.Param("collectionId")
@@ -55,31 +123,19 @@ func CreateLink(c *gin.Context) {
 		description = meta.Description
 	}
 
-	link := models.Link{
-		LinkURL: req.Link,
-	}
-
-	if err := db.DB.Where(&link).Attrs(models.Link{
-		Title:       title,
-		Description: description,
-		Image:       meta.Image,
-		ContentType: utils.DetectContentType(req.Link, meta.Type),
-	}).FirstOrCreate(&link).Error; err != nil {
+	linkObj, err := getOrCreateLink(req.Link, title, description, meta.Image, utils.DetectContentType(req.Link, meta.Type))
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create link"})
 		return
 	}
 
-	userLink := models.UserLink{
-		UserID:            userID,
-		CollectionID:      collectionID,
-		LinkID:            link.ID,
-		CustomTitle:       &title,
-		CustomDescription: &description,
-	}
-	if err := db.DB.Create(&userLink).Error; err != nil {
+	userLinkObj, err := getOrCreateUserLink(userID, collectionID, linkObj.ID, &title, &description)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map link to user"})
 		return
 	}
+	link := *linkObj
+	userLink := *userLinkObj
 
 	db.DB.Preload("Link").First(&userLink, userLink.ID)
 
@@ -183,19 +239,12 @@ func QuickAddLink(c *gin.Context) {
 		description := meta.Description
 		contentType := utils.DetectContentType(targetURL, meta.Type)
 
-		link = models.Link{
-			LinkURL: targetURL,
-		}
-
-		if err := db.DB.Where("link = ?", targetURL).Attrs(models.Link{
-			Title:       title,
-			Description: description,
-			Image:       meta.Image,
-			ContentType: contentType,
-		}).FirstOrCreate(&link).Error; err != nil {
+		linkObj, err := getOrCreateLink(targetURL, title, description, meta.Image, contentType)
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create link"})
 			return
 		}
+		link = *linkObj
 
 		customTitle = &title
 		customDescription = &description
@@ -217,17 +266,12 @@ func QuickAddLink(c *gin.Context) {
 		}
 	}
 
-	userLink := models.UserLink{
-		UserID:            userID,
-		CollectionID:      collectionID,
-		LinkID:            link.ID,
-		CustomTitle:       customTitle,
-		CustomDescription: customDescription,
-	}
-	if err := db.DB.Create(&userLink).Error; err != nil {
+	userLinkObj, err := getOrCreateUserLink(userID, collectionID, link.ID, customTitle, customDescription)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map link to user"})
 		return
 	}
+	userLink := *userLinkObj
 
 	c.JSON(http.StatusCreated, gin.H{
 		"data": gin.H{
@@ -285,18 +329,12 @@ func CreateCard(c *gin.Context) {
 			description = meta.Description
 		}
 
-		link = models.Link{
-			LinkURL: req.Link,
-		}
-		if err := db.DB.Where(&link).Attrs(models.Link{
-			Title:       title,
-			Description: description,
-			Image:       meta.Image,
-			ContentType: utils.DetectContentType(req.Link, meta.Type),
-		}).FirstOrCreate(&link).Error; err != nil {
+		linkObj, err := getOrCreateLink(req.Link, title, description, meta.Image, utils.DetectContentType(req.Link, meta.Type))
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create link"})
 			return
 		}
+		link = *linkObj
 	} else {
 		// Content based card (note)
 		link = models.Link{
@@ -311,17 +349,12 @@ func CreateCard(c *gin.Context) {
 		}
 	}
 
-	userLink := models.UserLink{
-		UserID:            userID,
-		CollectionID:      collectionID,
-		LinkID:            link.ID,
-		CustomTitle:       &link.Title,
-		CustomDescription: &link.Description,
-	}
-	if err := db.DB.Create(&userLink).Error; err != nil {
+	userLinkObj, err := getOrCreateUserLink(userID, collectionID, link.ID, &link.Title, &link.Description)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map link to user"})
 		return
 	}
+	userLink := *userLinkObj
 
 	db.DB.Preload("Link").First(&userLink, userLink.ID)
 

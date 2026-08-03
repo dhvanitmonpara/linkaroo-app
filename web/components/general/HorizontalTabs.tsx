@@ -25,6 +25,8 @@ import { BsCollectionFill } from "react-icons/bs";
 import "./components.css";
 import FeedbackForm from "@/components/Forms/FeedbackForm";
 import { useClerk } from "@clerk/nextjs";
+import ConnectorsManager from "@/components/connectors/ConnectorsManager";
+import { Plug } from "lucide-react";
 
 export default function HorizontalTabs() {
   const { profile } = useProfileStore();
@@ -146,9 +148,26 @@ export default function HorizontalTabs() {
               <span>Profile</span>
             </div>
           </DrawerClose>
+
           <DrawerMenu
             onClose={() => setProfileDrawer(false)}
-            title="Create a Collection"
+            title="Integrations & Connectors"
+            contentClassName="px-4 pt-0 pb-6 max-h-[85vh] overflow-y-auto"
+            trigger={
+              <div className="flex p-2 justify-normal items-center rounded-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-200">
+                <span className="w-12 h-12 flex justify-center items-center text-xl text-indigo-400">
+                  <Plug />
+                </span>
+                <span>Connectors</span>
+              </div>
+            }
+          >
+            <ConnectorsManager />
+          </DrawerMenu>
+
+          <DrawerMenu
+            onClose={() => setProfileDrawer(false)}
+            title="Settings"
             contentClassName="px-4 pt-0 pb-6"
             trigger={
               <div className="flex p-2 justify-normal items-center rounded-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-200">
