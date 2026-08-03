@@ -52,7 +52,8 @@ const DashboardPage = () => {
                 collectionId: userLink.collectionId,
                 image: response.data.data.link.image,
                 isChecked: userLink.isChecked,
-                __v: userLink.__v
+                __v: userLink.__v,
+                contentType: response.data.data.link.contentType ?? 'link',
             }
 
             addInboxLinkItem(formattedLink)

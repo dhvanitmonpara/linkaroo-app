@@ -46,16 +46,14 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     (async () => {
       try {
-        if (!isLoaded) {
-          if (!isSignedIn) {
-            navigate.push("/auth/signin")
-          }
-          return
+        if (!isLoaded) return;
+        if (!isSignedIn) {
+          navigate.push("/auth/signin");
+          return;
         }
         const email = user?.primaryEmailAddress?.emailAddress;
         if (!email) {
-          navigate.push("/auth/signin")
-          return
+          return;
         }
 
         const currentUser = await axios({

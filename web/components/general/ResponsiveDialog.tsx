@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -114,7 +115,7 @@ function ResponsiveDialog({
         )}
 
         <DialogContent
-          className={`sm:max-w-[27.2rem] md:max-w-96 ${className}`}
+          className={cn("sm:max-w-[27.2rem] md:max-w-96", className)}
           showCloseButton={showCloseButton && prebuildForm}
         >
           {prebuildForm ? (

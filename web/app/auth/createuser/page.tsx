@@ -34,16 +34,18 @@ function CreateUserForm() {
           withCredentials: true,
         });
 
-        if (res.status !== 201) {
-          toast.error('Failed to create user')
-          return
+        if (res.status === 201 || res.status === 200) {
+          navigate.push("/");
+          return;
         }
 
-        navigate.push("/")
+        toast.error('Failed to create user');
       } catch (error) {
         if (axios.isAxiosError(error)) {
-          if (error.response?.status === 400 && error.response?.data?.message === "User with email or username already exists") {
-            toast("User already exists");
+          if (
+            error.response?.status === 200 ||
+            (error.response?.data?.message && error.response.data.message.includes("already exists"))
+          ) {
             navigate.push("/");
             return;
           }
@@ -53,9 +55,9 @@ function CreateUserForm() {
           toast.error("Error while creating user");
         }
       }
-    }
-    createUserHandler()
-  }, [isLoaded, isSignedIn, user]);
+    };
+    createUserHandler();
+  }, [isLoaded, isSignedIn, navigate, user]);
 
   useEffect(() => {
     if (!isLoaded) return;

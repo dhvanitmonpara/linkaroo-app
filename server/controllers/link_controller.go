@@ -3,6 +3,8 @@ package controllers
 import (
 	"net/http"
 	"net/url"
+	"regexp"
+	"strings"
 
 	"linkaroo-app/server/db"
 	"linkaroo-app/server/models"
@@ -147,43 +149,74 @@ func QuickAddLink(c *gin.Context) {
 		return
 	}
 
-	// Always treat quick input as a text note by default
-	defaultTitle := ""
-	noteDesc := req.Link
-	customTitle := &defaultTitle
-	customDescription := &noteDesc
-
-	var link models.Link
-	link = models.Link{
-		Title:       defaultTitle,
-		Description: noteDesc,
-		LinkURL:     uuid.New().String(), // Unique string to satisfy DB constraints
-		ContentType: "note",
-	}
-	if err := db.DB.Create(&link).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create note"})
-		return
-	}
-
-	// Check if userId is a valid UUID, if not generate a dummy one for now since User port isn't complete maybe
 	userID, err := uuid.Parse(req.UserId)
 	if err != nil {
-		// Just to prevent breaking the flow if the frontend sends ClerkID instead of UUID.
-		// Assuming frontend _id is actually User.ID since it works in other places.
-		// If it fails, we return error
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return
 	}
 
-	// Set customTitle and customDescription to match link (since frontend formatter expects them here for QuickAdd)
-	if customTitle == nil {
-		customTitle = &link.Title
-	}
-	if customDescription == nil {
-		customDescription = &link.Description
+	rawInput := strings.TrimSpace(req.Link)
+	targetURL := rawInput
+	isLink := false
+
+	if !strings.HasPrefix(targetURL, "http://") && !strings.HasPrefix(targetURL, "https://") {
+		if strings.HasPrefix(targetURL, "www.") || regexp.MustCompile(`^(?i)[a-z0-9-]+(\.[a-z0-9-]+)+(/.*)?$`).MatchString(targetURL) {
+			targetURL = "https://" + targetURL
+		}
 	}
 
-	// Create UserLink
+	u, err := url.ParseRequestURI(targetURL)
+	if err == nil && u.Scheme != "" && u.Host != "" && strings.Contains(u.Host, ".") {
+		isLink = true
+	}
+
+	var link models.Link
+	var customTitle *string
+	var customDescription *string
+
+	if isLink {
+		meta := utils.FetchMetadata(targetURL)
+		title := meta.Title
+		if title == "" {
+			title = utils.GenerateTitleFromURL(targetURL)
+		}
+		description := meta.Description
+		contentType := utils.DetectContentType(targetURL, meta.Type)
+
+		link = models.Link{
+			LinkURL: targetURL,
+		}
+
+		if err := db.DB.Where("link = ?", targetURL).Attrs(models.Link{
+			Title:       title,
+			Description: description,
+			Image:       meta.Image,
+			ContentType: contentType,
+		}).FirstOrCreate(&link).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create link"})
+			return
+		}
+
+		customTitle = &title
+		customDescription = &description
+	} else {
+		defaultTitle := ""
+		noteDesc := rawInput
+		customTitle = &defaultTitle
+		customDescription = &noteDesc
+
+		link = models.Link{
+			Title:       defaultTitle,
+			Description: noteDesc,
+			LinkURL:     uuid.New().String(),
+			ContentType: "note",
+		}
+		if err := db.DB.Create(&link).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create note"})
+			return
+		}
+	}
+
 	userLink := models.UserLink{
 		UserID:            userID,
 		CollectionID:      collectionID,

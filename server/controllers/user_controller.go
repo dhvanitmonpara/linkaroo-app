@@ -43,6 +43,20 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
+	// Check if user already exists
+	var existingUser models.User
+	if err := db.DB.Where("email = ? OR clerk_id = ?", input.Email, input.ClerkID).First(&existingUser).Error; err == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"statusCode": 200,
+			"data": gin.H{
+				"user": existingUser,
+			},
+			"message": "User with email or username already exists",
+			"success": true,
+		})
+		return
+	}
+
 	user := models.User{
 		Username: input.Username,
 		Email:    input.Email,
@@ -50,13 +64,21 @@ func CreateUser(c *gin.Context) {
 	}
 
 	if err := db.DB.Create(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"statusCode": 500,
-			"message":    "Failed to create user",
+		c.JSON(http.StatusBadRequest, gin.H{
+			"statusCode": 400,
+			"message":    "User with email or username already exists",
 			"success":    false,
 		})
 		return
 	}
+
+	// Auto-create Inbox collection for new user
+	inboxCollection := models.Collection{
+		Title:       "Inbox",
+		IsInbox:     true,
+		CreatedByID: &user.ID,
+	}
+	db.DB.Create(&inboxCollection)
 
 	c.JSON(http.StatusCreated, gin.H{
 		"statusCode": 201,

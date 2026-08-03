@@ -63,17 +63,57 @@ const MarkdownRenderer = ({ content, className }: { content: string; className?:
 
 
 
-const PdfViewer = ({ link, title }: { link: string; title: string }) => {
-  const [viewMode, setViewMode] = React.useState<'mozilla' | 'google' | 'direct'>('mozilla');
+const DocAndWebPreviewer = ({
+  link,
+  title,
+  contentType,
+  image,
+}: {
+  link: string;
+  title: string;
+  contentType?: string;
+  image?: string | null;
+}) => {
+  const isGoogleDoc = Boolean(
+    link && (link.includes("docs.google.com") || link.includes("drive.google.com"))
+  );
+  const isOfficeDoc = Boolean(
+    link &&
+      (link.toLowerCase().includes(".doc") ||
+        link.toLowerCase().includes(".ppt") ||
+        link.toLowerCase().includes(".xls"))
+  );
+  const isPdf = contentType === "pdf" || Boolean(link && link.toLowerCase().includes(".pdf"));
+
+  const initialMode = isPdf ? "pdf" : isGoogleDoc || isOfficeDoc ? "google" : "live";
+  const [mode, setMode] = React.useState<"live" | "google" | "snapshot" | "pdf">(initialMode);
   const [isLoading, setIsLoading] = React.useState(true);
 
-  const getPdfSrc = () => {
-    switch (viewMode) {
-      case 'mozilla':
+  React.useEffect(() => {
+    setIsLoading(true);
+  }, [mode, link]);
+
+  const targetUrlForScreenshot = isPdf
+    ? `https://docs.google.com/viewer?url=${encodeURIComponent(link)}`
+    : link;
+
+  const screenshotUrl = link
+    ? `https://api.microlink.io/?url=${encodeURIComponent(targetUrlForScreenshot)}&screenshot=true&meta=false&embed=screenshot.url`
+    : image || null;
+
+  const getIframeSrc = () => {
+    switch (mode) {
+      case "pdf":
         return `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(link)}`;
-      case 'google':
+      case "google":
+        if (isGoogleDoc) {
+          if (link.includes("/edit")) {
+            return link.replace(/\/edit.*$/, "/preview");
+          }
+          return link;
+        }
         return `https://docs.google.com/viewer?url=${encodeURIComponent(link)}&embedded=true`;
-      case 'direct':
+      case "live":
       default:
         return link;
     }
@@ -81,39 +121,60 @@ const PdfViewer = ({ link, title }: { link: string; title: string }) => {
 
   return (
     <div className="w-full h-full min-h-[500px] flex flex-col rounded-2xl bg-zinc-950 border border-white/10 overflow-hidden relative group shadow-inner">
-      {/* Minimal Top Control Bar */}
-      <div className="flex items-center justify-between px-4 py-2 bg-zinc-900/90 backdrop-blur border-b border-white/10 text-xs text-zinc-400 shrink-0 z-10">
-        <div className="flex items-center space-x-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="font-medium text-zinc-200 truncate max-w-[180px] md:max-w-[280px]">{title}</span>
+      {/* Top Control Bar */}
+      <div className="flex items-center justify-between px-4 py-2 bg-zinc-900/90 backdrop-blur border-b border-white/10 text-xs text-zinc-400 shrink-0 z-10 gap-2">
+        <div className="flex items-center space-x-2 truncate">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+          <span className="font-medium text-zinc-200 truncate max-w-[180px] sm:max-w-[280px]">
+            {title || "Document / Web Preview"}
+          </span>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 shrink-0">
           {/* Mode Switcher */}
           <div className="flex items-center bg-zinc-800/80 p-0.5 rounded-lg border border-white/5">
-            <button
-              onClick={() => { setIsLoading(true); setViewMode('mozilla'); }}
-              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${viewMode === 'mozilla' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'hover:text-zinc-200'
+            {!isPdf && (
+              <button
+                onClick={() => {
+                  setIsLoading(true);
+                  setMode("live");
+                }}
+                className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${
+                  mode === "live"
+                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                    : "hover:text-zinc-200"
                 }`}
-              title="Fast Mozilla PDF.js Engine"
+                title="Direct Live Website Preview"
+              >
+                Live Web
+              </button>
+            )}
+            <button
+              onClick={() => {
+                setIsLoading(true);
+                setMode(isPdf ? "pdf" : "google");
+              }}
+              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${
+                mode === "google" || mode === "pdf"
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                  : "hover:text-zinc-200"
+              }`}
+              title="Cloud Doc Reader Engine"
             >
-              PDF.js
+              {isPdf ? "PDF Engine" : "Doc Engine"}
             </button>
             <button
-              onClick={() => { setIsLoading(true); setViewMode('google'); }}
-              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${viewMode === 'google' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'hover:text-zinc-200'
-                }`}
-              title="Google Docs Cloud Engine"
+              onClick={() => {
+                setMode("snapshot");
+              }}
+              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${
+                mode === "snapshot"
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                  : "hover:text-zinc-200"
+              }`}
+              title="Snapshot View"
             >
-              Google
-            </button>
-            <button
-              onClick={() => { setIsLoading(true); setViewMode('direct'); }}
-              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${viewMode === 'direct' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'hover:text-zinc-200'
-                }`}
-              title="Direct Native Viewer"
-            >
-              Direct
+              Snapshot
             </button>
           </div>
 
@@ -122,29 +183,43 @@ const PdfViewer = ({ link, title }: { link: string; title: string }) => {
             target="_blank"
             rel="noopener noreferrer"
             className="p-1.5 hover:bg-white/10 rounded-lg text-zinc-400 hover:text-zinc-100 transition-colors"
-            title="Open PDF in new tab"
+            title="Open link in new tab"
           >
             <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>
       </div>
 
-      {/* Main Iframe Viewer Container */}
-      <div className="relative w-full flex-1 bg-zinc-900 min-h-[460px]">
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm z-20">
-            <div className="flex flex-col items-center space-y-2">
-              <div className="w-6 h-6 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
-              <span className="text-xs text-zinc-400 font-medium">Streaming PDF...</span>
-            </div>
-          </div>
+      {/* Main Preview Container */}
+      <div className="relative w-full flex-1 bg-zinc-900 min-h-[460px] flex items-center justify-center overflow-hidden">
+        {mode === "snapshot" ? (
+          screenshotUrl ? (
+            <img
+              src={screenshotUrl}
+              alt={title}
+              className="w-full h-full object-contain max-h-[500px] bg-zinc-950"
+            />
+          ) : (
+            <div className="text-zinc-500 font-medium text-sm">No snapshot available</div>
+          )
+        ) : (
+          <>
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm z-20">
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="w-6 h-6 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+                  <span className="text-xs text-zinc-400 font-medium">Streaming preview...</span>
+                </div>
+              </div>
+            )}
+            <iframe
+              src={getIframeSrc()}
+              title={title}
+              onLoad={() => setIsLoading(false)}
+              className="w-full h-full min-h-[460px] border-0 rounded-b-2xl bg-white"
+            />
+          </>
         )}
-        <iframe
-          src={getPdfSrc()}
-          title={title}
-          onLoad={() => setIsLoading(false)}
-          className="w-full h-full min-h-[460px] border-0 rounded-b-2xl"
-        />
       </div>
     </div>
   );
@@ -585,10 +660,23 @@ const LinkCard = ({
     window.open(link, "_blank");
   };
 
-  const isValidUrl = Boolean(link && (link.startsWith("http://") || link.startsWith("https://")));
+  const isValidUrl = Boolean(
+    link &&
+      (link.startsWith("http://") ||
+        link.startsWith("https://") ||
+        link.startsWith("www.") ||
+        (link.includes(".") && !link.includes(" ") && !link.match(/^[0-9a-fA-F]{8}-/)))
+  );
   const isPDF = contentType === 'pdf' || Boolean(link && link.toLowerCase().includes('.pdf'));
-  const isYouTube = contentType === 'youtube' || (link && (link.includes('youtube.com') || link.includes('youtu.be')));
-  const isNote = contentType === 'note' || title === 'Quick Note' || (!isValidUrl && !image && !isYouTube && !isPDF);
+  const isYouTube = contentType === 'youtube' || Boolean(link && (link.includes('youtube.com') || link.includes('youtu.be')));
+  const isExplicitNote = contentType === 'note';
+  const isExplicitLink = Boolean(contentType && contentType !== 'note');
+
+  const isNote = isExplicitNote
+    ? true
+    : isExplicitLink || isValidUrl || image || isYouTube || isPDF
+      ? false
+      : true;
   const isTitleUUID = Boolean(title && title.match(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-/));
   const hasTitle = Boolean(title && title.trim() !== "" && title !== "Quick Note" && title !== "Unknown Title" && !isTitleUUID && title.trim() !== (description || "").trim());
   const activeNoteTheme = noteColorMap[currentColor] || noteColorMap.yellow;
@@ -1049,7 +1137,7 @@ const LinkCard = ({
           ) : (
             <DialogContent
               showCloseButton={false}
-              className="w-[85vw] lg:w-[60vw] max-w-[85vw] lg:max-w-[60vw] lg:min-w-[900px] max-h-[80vh] overflow-y-auto overflow-x-hidden sm:rounded-3xl border-white/10 bg-zinc-950 text-zinc-300 shadow-2xl p-6 md:p-12 gap-0"
+              className="w-[94vw] sm:w-[90vw] md:w-[85vw] lg:w-[80vw] xl:w-[75vw] sm:max-w-[1300px] max-w-[1300px] max-h-[90vh] overflow-y-auto overflow-x-hidden sm:rounded-3xl border-white/10 bg-zinc-950 text-zinc-300 shadow-2xl p-6 md:p-8 gap-0"
             >
               {/* Top Right Actions */}
               <div className="absolute top-6 right-6 flex items-center space-x-2 z-50">
@@ -1068,35 +1156,34 @@ const LinkCard = ({
 
               <div className="grid grid-cols-1 md:grid-cols-[1fr_380px] gap-8 md:gap-12 mt-4 w-full">
 
-                {/* Left Column */}
+                {/* Left Column — Live Web & Document Previewer */}
                 <div className="flex flex-col space-y-3 w-full min-w-0">
 
-                  {/* Media Box */}
-                  <div className={`w-full ${isPDF ? 'h-[500px]' : 'aspect-video'} rounded-2xl flex items-start justify-center overflow-y-auto overflow-x-hidden shadow-sm shrink-0 no-scrollbar ${isYouTube || isPDF ? '' : 'bg-white/5'}`}>
+                  {/* Document & Website Previewer */}
+                  <div className="w-full min-h-[500px] h-[520px] rounded-2xl flex items-start justify-center overflow-hidden shadow-sm shrink-0">
                     {isYouTube && youtubeId ? (
-                      <iframe width="100%" height="100%"
+                      <iframe
+                        width="100%"
+                        height="100%"
                         src={`https://www.youtube.com/embed/${youtubeId}`}
-                        title={title} frameBorder="0"
+                        title={title}
+                        frameBorder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowFullScreen className="w-full h-full object-cover rounded-2xl"
+                        allowFullScreen
+                        className="w-full h-full object-cover rounded-2xl min-h-[480px]"
                       />
-                    ) : isPDF && link ? (
-                      <PdfViewer link={link} title={title} />
                     ) : link ? (
-                      <MediaImageWithFallback
+                      <DocAndWebPreviewer
                         link={link}
-                        image={image}
                         title={title}
                         contentType={contentType}
-                        isDialog={true}
-                        containerClassName="w-full h-full flex items-start justify-center"
-                        className="w-full h-auto object-top bg-white"
+                        image={image}
                       />
                     ) : image ? (
-                      <img src={image} alt={title} className="w-full h-full object-cover" />
+                      <img src={image} alt={title} className="w-full h-full object-cover rounded-2xl" />
                     ) : (
                       <div className="text-zinc-500 font-medium text-xl h-full flex items-center justify-center">
-                        Link
+                        Preview
                       </div>
                     )}
                   </div>

@@ -6,16 +6,16 @@ import { useRouter } from 'next/navigation';
 
 function SignUpPage() {
   const navigate = useRouter();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, isLoaded } = useAuth();
 
   useEffect(() => {
-    if (isSignedIn) {
+    if (isLoaded && isSignedIn) {
       navigate.push("/");
     }
-  }, [isSignedIn, navigate]);
+  }, [isLoaded, isSignedIn, navigate]);
   return (
     <div className="h-screen w-screen flex justify-center items-center">
-      <SignUp routing="hash" />
+      <SignUp routing="hash" signInUrl="/auth/signin" forceRedirectUrl="/" />
     </div>
   )
 }
