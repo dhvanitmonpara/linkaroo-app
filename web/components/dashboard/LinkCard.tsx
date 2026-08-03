@@ -63,6 +63,47 @@ const MarkdownRenderer = ({ content, className }: { content: string; className?:
 
 
 
+const isKnownNonEmbeddable = (url: string): boolean => {
+  if (!url) return true;
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.toLowerCase();
+    const blockedDomains = [
+      "google.com",
+      "github.com",
+      "twitter.com",
+      "x.com",
+      "facebook.com",
+      "instagram.com",
+      "linkedin.com",
+      "reddit.com",
+      "youtube.com",
+      "medium.com",
+      "notion.so",
+      "figma.com",
+      "amazon.com",
+      "netflix.com",
+      "apple.com",
+      "microsoft.com",
+      "wikipedia.org",
+      "canva.com",
+      "spotify.com",
+      "dropbox.com",
+      "pinterest.com",
+      "quora.com",
+      "stackexchange.com",
+      "stackoverflow.com",
+      "vimeo.com",
+      "tiktok.com",
+      "discord.com",
+      "slack.com",
+    ];
+    return blockedDomains.some((domain) => hostname === domain || hostname.endsWith("." + domain));
+  } catch (e) {
+    return true;
+  }
+};
+
 const DocAndWebPreviewer = ({
   link,
   title,
@@ -80,18 +121,74 @@ const DocAndWebPreviewer = ({
   const isOfficeDoc = Boolean(
     link &&
       (link.toLowerCase().includes(".doc") ||
+        link.toLowerCase().includes(".docx") ||
         link.toLowerCase().includes(".ppt") ||
-        link.toLowerCase().includes(".xls"))
+        link.toLowerCase().includes(".pptx") ||
+        link.toLowerCase().includes(".xls") ||
+        link.toLowerCase().includes(".xlsx") ||
+        link.toLowerCase().includes(".csv") ||
+        link.toLowerCase().includes(".txt") ||
+        link.toLowerCase().includes(".rtf") ||
+        link.toLowerCase().includes(".odt") ||
+        link.toLowerCase().includes(".ods") ||
+        link.toLowerCase().includes(".odp") ||
+        link.toLowerCase().includes(".epub"))
   );
   const isPdf = contentType === "pdf" || Boolean(link && link.toLowerCase().includes(".pdf"));
+  const isDoc = isPdf || isGoogleDoc || isOfficeDoc || Boolean(
+    contentType && (
+      contentType.includes("doc") ||
+      contentType.includes("pdf") ||
+      contentType.includes("sheet") ||
+      contentType.includes("presentation") ||
+      contentType.includes("text")
+    )
+  );
 
-  const initialMode = isPdf ? "pdf" : isGoogleDoc || isOfficeDoc ? "google" : "live";
+  const [liveWebFailed, setLiveWebFailed] = React.useState(false);
+
+  const isEmbeddableUrl = React.useMemo(() => {
+    if (!link) return false;
+    if (isPdf || isGoogleDoc || isOfficeDoc) return false;
+    if (isKnownNonEmbeddable(link)) return false;
+    return true;
+  }, [link, isPdf, isGoogleDoc, isOfficeDoc]);
+
+  const showLiveWebTab = isEmbeddableUrl && !liveWebFailed;
+
+  const initialMode = isDoc
+    ? (isPdf ? "pdf" : "google")
+    : (showLiveWebTab ? "live" : "snapshot");
+
   const [mode, setMode] = React.useState<"live" | "google" | "snapshot" | "pdf">(initialMode);
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
+    setLiveWebFailed(false);
+    const canLive = !isPdf && !isGoogleDoc && !isOfficeDoc && !isKnownNonEmbeddable(link);
+    const nextMode = isDoc
+      ? (isPdf ? "pdf" : "google")
+      : (canLive ? "live" : "snapshot");
+    setMode(nextMode);
     setIsLoading(true);
-  }, [mode, link]);
+  }, [link, isDoc, isPdf, isGoogleDoc, isOfficeDoc]);
+
+  React.useEffect(() => {
+    setIsLoading(true);
+    let timeoutId: NodeJS.Timeout;
+    if (mode === "live") {
+      timeoutId = setTimeout(() => {
+        setIsLoading((loading) => {
+          if (loading) {
+            setLiveWebFailed(true);
+            setMode(isDoc ? (isPdf ? "pdf" : "google") : "snapshot");
+          }
+          return false;
+        });
+      }, 6000);
+    }
+    return () => clearTimeout(timeoutId);
+  }, [mode, isDoc, isPdf]);
 
   const targetUrlForScreenshot = isPdf
     ? `https://docs.google.com/viewer?url=${encodeURIComponent(link)}`
@@ -133,7 +230,7 @@ const DocAndWebPreviewer = ({
         <div className="flex items-center space-x-2 shrink-0">
           {/* Mode Switcher */}
           <div className="flex items-center bg-zinc-800/80 p-0.5 rounded-lg border border-white/5">
-            {!isPdf && (
+            {showLiveWebTab && (
               <button
                 onClick={() => {
                   setIsLoading(true);
@@ -149,20 +246,22 @@ const DocAndWebPreviewer = ({
                 Live Web
               </button>
             )}
-            <button
-              onClick={() => {
-                setIsLoading(true);
-                setMode(isPdf ? "pdf" : "google");
-              }}
-              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${
-                mode === "google" || mode === "pdf"
-                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                  : "hover:text-zinc-200"
-              }`}
-              title="Cloud Doc Reader Engine"
-            >
-              {isPdf ? "PDF Engine" : "Doc Engine"}
-            </button>
+            {isDoc && (
+              <button
+                onClick={() => {
+                  setIsLoading(true);
+                  setMode(isPdf ? "pdf" : "google");
+                }}
+                className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${
+                  mode === "google" || mode === "pdf"
+                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                    : "hover:text-zinc-200"
+                }`}
+                title="Cloud Doc Reader Engine"
+              >
+                {isPdf ? "PDF Engine" : "Doc Engine"}
+              </button>
+            )}
             <button
               onClick={() => {
                 setMode("snapshot");
@@ -216,6 +315,11 @@ const DocAndWebPreviewer = ({
               src={getIframeSrc()}
               title={title}
               onLoad={() => setIsLoading(false)}
+              onError={() => {
+                setIsLoading(false);
+                setLiveWebFailed(true);
+                setMode(isDoc ? (isPdf ? "pdf" : "google") : "snapshot");
+              }}
               className="w-full h-full min-h-[460px] border-0 rounded-b-2xl bg-white"
             />
           </>

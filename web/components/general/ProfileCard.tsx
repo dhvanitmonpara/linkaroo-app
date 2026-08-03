@@ -135,7 +135,7 @@ const DialogContainer = ({
   onClose = null,
 }: {
   children: ReactNode;
-  trigger: string;
+  trigger: ReactNode;
   title: string;
   description: string;
   onClose?: ((value: boolean) => void) | null;
