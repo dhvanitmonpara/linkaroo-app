@@ -8,6 +8,13 @@ export interface KnownConnectorApp {
 
 export const KNOWN_CONNECTOR_APPS: KnownConnectorApp[] = [
   {
+    id: "CHATGPT",
+    name: "ChatGPT / OpenAI",
+    iconName: "chatgpt",
+    domainRegex: /^(https?:\/\/)?(www\.)?(chatgpt\.com|chat\.openai\.com|platform\.openai\.com)\/.+/i,
+    description: "Sync OpenAI models, prompt templates, and chat resources seamlessly into your vault.",
+  },
+  {
     id: "GITHUB",
     name: "GitHub",
     iconName: "github",

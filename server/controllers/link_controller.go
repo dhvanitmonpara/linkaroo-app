@@ -36,15 +36,32 @@ func getOrCreateLink(targetURL, title, description, image, contentType string) (
 		return nil, err
 	}
 
+	// Update existing record if it had a generic/placeholder title or was previously saved
+	updates := map[string]interface{}{}
+	if link.Title == "" || link.Title == "Checkout this chat" || link.Title == "ChatGPT" || link.Title == "ChatGPT - Checkout this chat" || (title != "" && title != "Checkout this chat" && title != "ChatGPT") {
+		updates["title"] = title
+		link.Title = title
+	}
+	if description != "" {
+		updates["description"] = description
+		link.Description = description
+	}
+	if image != "" {
+		updates["image"] = image
+		link.Image = image
+	}
+	if contentType != "" {
+		updates["content_type"] = contentType
+		link.ContentType = contentType
+	}
+
 	if link.DeletedAt.Valid {
-		db.DB.Unscoped().Model(&link).Updates(map[string]interface{}{
-			"deleted_at":   nil,
-			"title":        title,
-			"description":  description,
-			"image":        image,
-			"content_type": contentType,
-		})
+		updates["deleted_at"] = nil
 		link.DeletedAt = gorm.DeletedAt{}
+	}
+
+	if len(updates) > 0 {
+		db.DB.Unscoped().Model(&link).Updates(updates)
 	}
 
 	return &link, nil
@@ -70,13 +87,22 @@ func getOrCreateUserLink(userID, collectionID, linkID uuid.UUID, customTitle, cu
 		return nil, err
 	}
 
+	updates := map[string]interface{}{}
+	if userLink.CustomTitle == nil || *userLink.CustomTitle == "" || *userLink.CustomTitle == "Checkout this chat" || *userLink.CustomTitle == "ChatGPT" || *userLink.CustomTitle == "ChatGPT - Checkout this chat" {
+		if customTitle != nil && *customTitle != "" && *customTitle != "Checkout this chat" {
+			updates["custom_title"] = customTitle
+			userLink.CustomTitle = customTitle
+		}
+	}
+
 	if userLink.DeletedAt.Valid {
-		db.DB.Unscoped().Model(&userLink).Updates(map[string]interface{}{
-			"deleted_at":         nil,
-			"custom_title":       customTitle,
-			"custom_description": customDescription,
-		})
+		updates["deleted_at"] = nil
+		updates["custom_description"] = customDescription
 		userLink.DeletedAt = gorm.DeletedAt{}
+	}
+
+	if len(updates) > 0 {
+		db.DB.Unscoped().Model(&userLink).Updates(updates)
 	}
 
 	return &userLink, nil
@@ -108,15 +134,17 @@ func CreateLink(c *gin.Context) {
 	}
 
 	ghToken := GetActiveGitHubTokenForUser(req.UserId)
-	meta := utils.FetchMetadataWithToken(req.Link, ghToken)
+	gptToken := GetActiveChatGPTTokenForUser(req.UserId)
+	meta := utils.FetchMetadataWithToken(req.Link, ghToken, gptToken)
 	isReachable := meta.Title != "" || meta.Description != ""
 
-	title := req.Title
-	if title == "" && meta.Title != "" {
-		title = meta.Title
-	}
-	if title == "" {
-		title = utils.GenerateTitleFromURL(req.Link)
+	title := strings.TrimSpace(req.Title)
+	if title == "" || title == req.Link || strings.HasPrefix(title, "http://") || strings.HasPrefix(title, "https://") {
+		if meta.Title != "" {
+			title = meta.Title
+		} else {
+			title = utils.GenerateTitleFromURL(req.Link)
+		}
 	}
 
 	description := req.Description
@@ -233,7 +261,8 @@ func QuickAddLink(c *gin.Context) {
 
 	if isLink {
 		ghToken := GetActiveGitHubTokenForUser(req.UserId)
-		meta := utils.FetchMetadataWithToken(targetURL, ghToken)
+		gptToken := GetActiveChatGPTTokenForUser(req.UserId)
+		meta := utils.FetchMetadataWithToken(targetURL, ghToken, gptToken)
 		title := meta.Title
 		if title == "" {
 			title = utils.GenerateTitleFromURL(targetURL)

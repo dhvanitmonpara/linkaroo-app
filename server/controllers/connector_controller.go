@@ -309,3 +309,34 @@ func GetActiveGitHubTokenForUser(userID string) string {
 	}
 	return ""
 }
+
+// GetActiveChatGPTTokenForUser retrieves the ChatGPT / OpenAI token/key for a user if connected.
+func GetActiveChatGPTTokenForUser(userID string) string {
+	if GlobalConnectorManager == nil {
+		return ""
+	}
+
+	instanceID := "CHATGPT-default"
+	if userID != "" {
+		instanceID = "CHATGPT-" + strings.TrimSpace(userID)
+	}
+
+	tokenRec, err := GlobalConnectorManager.TokenStore().GetToken(context.Background(), instanceID)
+	if err == nil && tokenRec != nil && tokenRec.AuthConfig != nil {
+		if t := tokenRec.AuthConfig.GetToken(); t != "" {
+			return t
+		}
+	}
+
+	for _, conn := range GlobalConnectorManager.ListConnectors() {
+		if conn.Provider() == "CHATGPT" {
+			tokenRec, err := GlobalConnectorManager.TokenStore().GetToken(context.Background(), conn.ID())
+			if err == nil && tokenRec != nil && tokenRec.AuthConfig != nil {
+				if t := tokenRec.AuthConfig.GetToken(); t != "" {
+					return t
+				}
+			}
+		}
+	}
+	return ""
+}

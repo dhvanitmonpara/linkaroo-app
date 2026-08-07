@@ -155,8 +155,8 @@ const CreateLinkBar: React.FC<CreateLinkBarProps> = ({
       }
 
       const newData = {
-        title: identifier,
-        description: data.description,
+        title: "",
+        description: data.description || "",
         link: identifier,
         userId: profile._id,
       };

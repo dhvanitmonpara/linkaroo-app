@@ -122,19 +122,19 @@ const DocAndWebPreviewer = ({
   );
   const isOfficeDoc = Boolean(
     link &&
-      (link.toLowerCase().includes(".doc") ||
-        link.toLowerCase().includes(".docx") ||
-        link.toLowerCase().includes(".ppt") ||
-        link.toLowerCase().includes(".pptx") ||
-        link.toLowerCase().includes(".xls") ||
-        link.toLowerCase().includes(".xlsx") ||
-        link.toLowerCase().includes(".csv") ||
-        link.toLowerCase().includes(".txt") ||
-        link.toLowerCase().includes(".rtf") ||
-        link.toLowerCase().includes(".odt") ||
-        link.toLowerCase().includes(".ods") ||
-        link.toLowerCase().includes(".odp") ||
-        link.toLowerCase().includes(".epub"))
+    (link.toLowerCase().includes(".doc") ||
+      link.toLowerCase().includes(".docx") ||
+      link.toLowerCase().includes(".ppt") ||
+      link.toLowerCase().includes(".pptx") ||
+      link.toLowerCase().includes(".xls") ||
+      link.toLowerCase().includes(".xlsx") ||
+      link.toLowerCase().includes(".csv") ||
+      link.toLowerCase().includes(".txt") ||
+      link.toLowerCase().includes(".rtf") ||
+      link.toLowerCase().includes(".odt") ||
+      link.toLowerCase().includes(".ods") ||
+      link.toLowerCase().includes(".odp") ||
+      link.toLowerCase().includes(".epub"))
   );
   const isPdf = contentType === "pdf" || Boolean(link && link.toLowerCase().includes(".pdf"));
   const isDoc = isPdf || isGoogleDoc || isOfficeDoc || Boolean(
@@ -210,9 +210,40 @@ const DocAndWebPreviewer = ({
     ? `https://docs.google.com/viewer?url=${encodeURIComponent(link)}&embedded=true`
     : (isGoogleDoc && link.includes("/edit") ? link.replace(/\/edit.*$/, "/preview") : (isOfficeDoc ? `https://docs.google.com/viewer?url=${encodeURIComponent(link)}&embedded=true` : link));
 
+  const isChatGPTLink = link ? (link.includes("chatgpt.com") || link.includes("chat.openai.com")) : false;
+
   const screenshotUrl = link
-    ? `https://api.microlink.io/?url=${encodeURIComponent(targetUrlForScreenshot)}&screenshot=true&screenshot.fullPage=true&viewport.width=1920&viewport.height=1080&meta=false&embed=screenshot.url`
+    ? `https://api.microlink.io/?url=${encodeURIComponent(targetUrlForScreenshot)}&screenshot=true&screenshot.fullPage=true&viewport.width=1920&viewport.height=1080&meta=false&embed=screenshot.url${isChatGPTLink ? "&waitForTimeout=8000" : ""}`
     : image || null;
+
+  const [dynamicTitle, setDynamicTitle] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (isChatGPTLink && link && (!title || title === "Checkout this chat" || title === "ChatGPT" || title === "ChatGPT Shared Conversation")) {
+      let isMounted = true;
+      axios
+        .get(`https://api.microlink.io/?url=${encodeURIComponent(link)}&waitForTimeout=6000`)
+        .then((res) => {
+          if (!isMounted) return;
+          const fetchedTitle = res.data?.data?.title;
+          if (fetchedTitle && typeof fetchedTitle === "string") {
+            let cleaned = fetchedTitle
+              .replace(/ - ChatGPT$/, "")
+              .replace(/ \| ChatGPT$/, "")
+              .replace(/^ChatGPT - /, "")
+              .replace(/^ChatGPT \| /, "")
+              .trim();
+            if (cleaned && !cleaned.toLowerCase().includes("checkout this chat") && cleaned.toLowerCase() !== "chatgpt") {
+              setDynamicTitle(cleaned);
+            }
+          }
+        })
+        .catch(() => {});
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [link, isChatGPTLink, title]);
 
   const getIframeSrc = () => {
     switch (mode) {
@@ -239,7 +270,7 @@ const DocAndWebPreviewer = ({
         <div className="flex items-center space-x-2 truncate">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
           <span className="font-medium text-zinc-200 truncate max-w-[180px] sm:max-w-[280px]">
-            {title || "Document / Web Preview"}
+            {dynamicTitle || title || "Document / Web Preview"}
           </span>
         </div>
 
@@ -252,11 +283,10 @@ const DocAndWebPreviewer = ({
                   setIsLoading(true);
                   setMode("live");
                 }}
-                className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${
-                  mode === "live"
-                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                    : "hover:text-zinc-200"
-                }`}
+                className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${mode === "live"
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                  : "hover:text-zinc-200"
+                  }`}
                 title="Direct Live Website Preview"
               >
                 Live Web
@@ -268,11 +298,10 @@ const DocAndWebPreviewer = ({
                   setIsLoading(true);
                   setMode(isPdf ? "pdf" : "google");
                 }}
-                className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${
-                  mode === "google" || mode === "pdf"
-                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                    : "hover:text-zinc-200"
-                }`}
+                className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${mode === "google" || mode === "pdf"
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                  : "hover:text-zinc-200"
+                  }`}
                 title="Cloud Doc Reader Engine"
               >
                 {isPdf ? "PDF Engine" : "Doc Engine"}
@@ -282,11 +311,10 @@ const DocAndWebPreviewer = ({
               onClick={() => {
                 setMode("snapshot");
               }}
-              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${
-                mode === "snapshot"
-                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                  : "hover:text-zinc-200"
-              }`}
+              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${mode === "snapshot"
+                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                : "hover:text-zinc-200"
+                }`}
               title="Snapshot View"
             >
               Snapshot
@@ -422,19 +450,19 @@ const MediaImageWithFallback = ({
   const isGoogleDoc = Boolean(link && (link.includes("docs.google.com") || link.includes("drive.google.com")));
   const isOfficeDoc = Boolean(
     link &&
-      (link.toLowerCase().includes(".doc") ||
-        link.toLowerCase().includes(".docx") ||
-        link.toLowerCase().includes(".ppt") ||
-        link.toLowerCase().includes(".pptx") ||
-        link.toLowerCase().includes(".xls") ||
-        link.toLowerCase().includes(".xlsx") ||
-        link.toLowerCase().includes(".csv") ||
-        link.toLowerCase().includes(".txt") ||
-        link.toLowerCase().includes(".rtf") ||
-        link.toLowerCase().includes(".odt") ||
-        link.toLowerCase().includes(".ods") ||
-        link.toLowerCase().includes(".odp") ||
-        link.toLowerCase().includes(".epub"))
+    (link.toLowerCase().includes(".doc") ||
+      link.toLowerCase().includes(".docx") ||
+      link.toLowerCase().includes(".ppt") ||
+      link.toLowerCase().includes(".pptx") ||
+      link.toLowerCase().includes(".xls") ||
+      link.toLowerCase().includes(".xlsx") ||
+      link.toLowerCase().includes(".csv") ||
+      link.toLowerCase().includes(".txt") ||
+      link.toLowerCase().includes(".rtf") ||
+      link.toLowerCase().includes(".odt") ||
+      link.toLowerCase().includes(".ods") ||
+      link.toLowerCase().includes(".odp") ||
+      link.toLowerCase().includes(".epub"))
   );
   const isDoc = isPDF || isGoogleDoc || isOfficeDoc || Boolean(
     contentType && (
@@ -817,28 +845,28 @@ const LinkCard = ({
 
   const isValidUrl = Boolean(
     link &&
-      (link.startsWith("http://") ||
-        link.startsWith("https://") ||
-        link.startsWith("www.") ||
-        (link.includes(".") && !link.includes(" ") && !link.match(/^[0-9a-fA-F]{8}-/)))
+    (link.startsWith("http://") ||
+      link.startsWith("https://") ||
+      link.startsWith("www.") ||
+      (link.includes(".") && !link.includes(" ") && !link.match(/^[0-9a-fA-F]{8}-/)))
   );
   const isPDF = contentType === 'pdf' || Boolean(link && link.toLowerCase().includes('.pdf'));
   const isGoogleDoc = Boolean(link && (link.includes("docs.google.com") || link.includes("drive.google.com")));
   const isOfficeDoc = Boolean(
     link &&
-      (link.toLowerCase().includes(".doc") ||
-        link.toLowerCase().includes(".docx") ||
-        link.toLowerCase().includes(".ppt") ||
-        link.toLowerCase().includes(".pptx") ||
-        link.toLowerCase().includes(".xls") ||
-        link.toLowerCase().includes(".xlsx") ||
-        link.toLowerCase().includes(".csv") ||
-        link.toLowerCase().includes(".txt") ||
-        link.toLowerCase().includes(".rtf") ||
-        link.toLowerCase().includes(".odt") ||
-        link.toLowerCase().includes(".ods") ||
-        link.toLowerCase().includes(".odp") ||
-        link.toLowerCase().includes(".epub"))
+    (link.toLowerCase().includes(".doc") ||
+      link.toLowerCase().includes(".docx") ||
+      link.toLowerCase().includes(".ppt") ||
+      link.toLowerCase().includes(".pptx") ||
+      link.toLowerCase().includes(".xls") ||
+      link.toLowerCase().includes(".xlsx") ||
+      link.toLowerCase().includes(".csv") ||
+      link.toLowerCase().includes(".txt") ||
+      link.toLowerCase().includes(".rtf") ||
+      link.toLowerCase().includes(".odt") ||
+      link.toLowerCase().includes(".ods") ||
+      link.toLowerCase().includes(".odp") ||
+      link.toLowerCase().includes(".epub"))
   );
   const isDoc = isPDF || isGoogleDoc || isOfficeDoc || Boolean(
     contentType && (

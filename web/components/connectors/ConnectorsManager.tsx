@@ -338,7 +338,7 @@ export default function ConnectorsManager() {
                 id="auth-token"
                 type="password"
                 placeholder={
-                  selectedProvider?.id === "GITHUB" ? "ghp_xxxxxxxxxxxxxxxxxxxx" : "Enter token..."
+                  selectedProvider?.id === "GITHUB" ? "ghp_xxxxxxxxxxxxxxxxxxxx" : "Enter token or API key..."
                 }
                 value={tokenInput}
                 onChange={(e) => setTokenInput(e.target.value)}

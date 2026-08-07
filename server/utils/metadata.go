@@ -84,9 +84,144 @@ func FetchGitHubMetadata(targetURL, token string) (Metadata, bool) {
 	}, true
 }
 
-func FetchMetadataWithToken(targetURL, token string) Metadata {
-	if ghMeta, ok := FetchGitHubMetadata(targetURL, token); ok {
+func FetchChatGPTMetadata(targetURL, token string) (Metadata, bool) {
+	u, err := url.Parse(targetURL)
+	if err != nil || (!strings.Contains(u.Host, "chatgpt.com") && !strings.Contains(u.Host, "chat.openai.com")) {
+		return Metadata{}, false
+	}
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	req, err := http.NewRequest("GET", targetURL, nil)
+	if err != nil {
+		return Metadata{}, false
+	}
+
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
+
+	if token != "" {
+		cleanToken := strings.TrimSpace(token)
+		if !strings.HasPrefix(cleanToken, "Bearer ") && !strings.HasPrefix(cleanToken, "Session ") {
+			req.Header.Set("Authorization", "Bearer "+cleanToken)
+		} else {
+			req.Header.Set("Authorization", cleanToken)
+		}
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return Metadata{}, false
+	}
+	defer resp.Body.Close()
+
+	z := html.NewTokenizer(resp.Body)
+	meta := Metadata{}
+	isTitle := false
+	var titleBuf string
+
+LoopChatGPT:
+	for {
+		tt := z.Next()
+		switch tt {
+		case html.ErrorToken:
+			break LoopChatGPT
+		case html.StartTagToken, html.SelfClosingTagToken:
+			t := z.Token()
+			switch t.Data {
+			case "title":
+				isTitle = true
+			case "meta":
+				var name, property, content string
+				for _, a := range t.Attr {
+					switch a.Key {
+					case "name":
+						name = a.Val
+					case "property":
+						property = a.Val
+					case "content":
+						content = a.Val
+					}
+				}
+
+				if name == "description" && meta.Description == "" && content != "" {
+					meta.Description = content
+				} else if (property == "og:description" || name == "og:description" || property == "twitter:description" || name == "twitter:description") && content != "" {
+					meta.Description = content
+				} else if (property == "og:title" || name == "og:title" || property == "twitter:title" || name == "twitter:title") && content != "" {
+					meta.Title = content
+				} else if (property == "og:image" || name == "og:image" || property == "twitter:image" || name == "twitter:image") && content != "" {
+					meta.Image = content
+				}
+			}
+		case html.TextToken:
+			if isTitle {
+				titleBuf += string(z.Text())
+			}
+		case html.EndTagToken:
+			t := z.Token()
+			if t.Data == "title" {
+				isTitle = false
+				if meta.Title == "" {
+					meta.Title = strings.TrimSpace(titleBuf)
+				}
+			}
+		}
+	}
+
+	// Clean title
+	if meta.Title != "" {
+		cleaned := meta.Title
+		cleaned = strings.TrimSuffix(cleaned, " - ChatGPT")
+		cleaned = strings.TrimSuffix(cleaned, " | ChatGPT")
+		cleaned = strings.TrimPrefix(cleaned, "ChatGPT - ")
+		cleaned = strings.TrimPrefix(cleaned, "ChatGPT | ")
+		if strings.EqualFold(cleaned, "Checkout this chat") || strings.EqualFold(cleaned, "ChatGPT") || strings.HasPrefix(strings.ToLower(cleaned), "checkout this chat") {
+			cleaned = ""
+		}
+		meta.Title = strings.TrimSpace(cleaned)
+	}
+
+	if meta.Title == "" && meta.Description != "" {
+		desc := strings.TrimSpace(meta.Description)
+		desc = strings.TrimPrefix(desc, "ChatGPT - ")
+		desc = strings.TrimPrefix(desc, "Shared chat - ")
+		if idx := strings.Index(desc, "\n"); idx > 0 {
+			desc = desc[:idx]
+		}
+		if len(desc) > 80 {
+			desc = desc[:80] + "..."
+		}
+		if desc != "" && !strings.EqualFold(desc, "Checkout this chat") {
+			meta.Title = desc
+		}
+	}
+
+	if meta.Title == "" {
+		meta.Title = "ChatGPT Shared Conversation"
+	}
+
+	if meta.Title != "" || meta.Description != "" {
+		return meta, true
+	}
+	return Metadata{}, false
+}
+
+func FetchMetadataWithToken(targetURL string, tokens ...string) Metadata {
+	ghToken := ""
+	gptToken := ""
+	if len(tokens) > 0 {
+		ghToken = tokens[0]
+	}
+	if len(tokens) > 1 {
+		gptToken = tokens[1]
+	}
+
+	if ghMeta, ok := FetchGitHubMetadata(targetURL, ghToken); ok {
 		return ghMeta
+	}
+	if gptMeta, ok := FetchChatGPTMetadata(targetURL, gptToken); ok {
+		return gptMeta
 	}
 	return FetchMetadata(targetURL)
 }
@@ -204,6 +339,40 @@ Loop:
 			meta.Title = parts[0] + "/" + parts[1]
 		} else if len(parts) == 1 && parts[0] != "" {
 			meta.Title = parts[0]
+		}
+	}
+
+	// Clean up ChatGPT shared chat titles (e.g. "Chat Title - ChatGPT" or generic "ChatGPT - Checkout this chat")
+	if strings.Contains(targetURL, "chatgpt.com/") || strings.Contains(targetURL, "chat.openai.com/") {
+		if meta.Title != "" {
+			cleaned := meta.Title
+			// Remove common suffixes/prefixes added by ChatGPT page titles
+			cleaned = strings.TrimSuffix(cleaned, " - ChatGPT")
+			cleaned = strings.TrimSuffix(cleaned, " | ChatGPT")
+			cleaned = strings.TrimPrefix(cleaned, "ChatGPT - ")
+			cleaned = strings.TrimPrefix(cleaned, "ChatGPT | ")
+			
+			// If meta title is generic ("Checkout this chat", "ChatGPT", etc.), check description for title or prompt excerpt
+			if strings.EqualFold(cleaned, "Checkout this chat") || strings.EqualFold(cleaned, "ChatGPT") || strings.HasPrefix(strings.ToLower(cleaned), "checkout this chat") {
+				cleaned = ""
+			}
+			meta.Title = strings.TrimSpace(cleaned)
+		}
+
+		// If title is empty after cleaning, extract first line or question from description
+		if meta.Title == "" && meta.Description != "" {
+			desc := strings.TrimSpace(meta.Description)
+			desc = strings.TrimPrefix(desc, "ChatGPT - ")
+			desc = strings.TrimPrefix(desc, "Shared chat - ")
+			if idx := strings.Index(desc, "\n"); idx > 0 {
+				desc = desc[:idx]
+			}
+			if len(desc) > 80 {
+				desc = desc[:80] + "..."
+			}
+			if desc != "" && !strings.EqualFold(desc, "Checkout this chat") {
+				meta.Title = desc
+			}
 		}
 	}
 
@@ -336,6 +505,11 @@ func GenerateTitleFromURL(targetURL string) string {
 
 	segments := strings.Split(path, "/")
 	lastSegment := segments[len(segments)-1]
+
+	// Check if URL is ChatGPT share link (e.g. /share/e/12345678-aaaa-bbbb-cccc-123456789abc or /c/uuid)
+	if strings.Contains(u.Host, "chatgpt.com") || strings.Contains(u.Host, "chat.openai.com") {
+		return "ChatGPT Shared Conversation"
+	}
 
 	// Remove common file extensions
 	if idx := strings.LastIndex(lastSegment, "."); idx > 0 {
