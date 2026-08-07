@@ -207,11 +207,11 @@ const DocAndWebPreviewer = ({
   }, [link, isDoc, isPdf, isGoogleDoc, isOfficeDoc, isLiveEmbeddable]);
 
   const targetUrlForScreenshot = isPdf
-    ? `https://docs.google.com/viewer?url=${encodeURIComponent(link)}`
-    : link;
+    ? `https://docs.google.com/viewer?url=${encodeURIComponent(link)}&embedded=true`
+    : (isGoogleDoc && link.includes("/edit") ? link.replace(/\/edit.*$/, "/preview") : (isOfficeDoc ? `https://docs.google.com/viewer?url=${encodeURIComponent(link)}&embedded=true` : link));
 
   const screenshotUrl = link
-    ? `https://api.microlink.io/?url=${encodeURIComponent(targetUrlForScreenshot)}&screenshot=true&meta=false&embed=screenshot.url`
+    ? `https://api.microlink.io/?url=${encodeURIComponent(targetUrlForScreenshot)}&screenshot=true&screenshot.fullPage=true&viewport.width=1920&viewport.height=1080&meta=false&embed=screenshot.url`
     : image || null;
 
   const getIframeSrc = () => {
@@ -309,11 +309,13 @@ const DocAndWebPreviewer = ({
       <div className="relative w-full flex-1 bg-zinc-900 min-h-[460px] flex items-center justify-center overflow-hidden">
         {mode === "snapshot" ? (
           screenshotUrl ? (
-            <img
-              src={screenshotUrl}
-              alt={title}
-              className="w-full h-full object-contain max-h-[500px] bg-zinc-950"
-            />
+            <div className="w-full h-full overflow-y-auto bg-zinc-950 p-4 flex justify-center items-start">
+              <img
+                src={screenshotUrl}
+                alt={title}
+                className="w-full max-w-4xl h-auto object-contain shadow-2xl rounded-lg border border-white/10"
+              />
+            </div>
           ) : (
             <div className="text-zinc-500 font-medium text-sm">No snapshot available</div>
           )
@@ -417,32 +419,64 @@ const MediaImageWithFallback = ({
 }) => {
   const isValidUrl = Boolean(link && (link.startsWith("http://") || link.startsWith("https://")));
   const isPDF = contentType === 'pdf' || Boolean(link && link.toLowerCase().includes('.pdf'));
+  const isGoogleDoc = Boolean(link && (link.includes("docs.google.com") || link.includes("drive.google.com")));
+  const isOfficeDoc = Boolean(
+    link &&
+      (link.toLowerCase().includes(".doc") ||
+        link.toLowerCase().includes(".docx") ||
+        link.toLowerCase().includes(".ppt") ||
+        link.toLowerCase().includes(".pptx") ||
+        link.toLowerCase().includes(".xls") ||
+        link.toLowerCase().includes(".xlsx") ||
+        link.toLowerCase().includes(".csv") ||
+        link.toLowerCase().includes(".txt") ||
+        link.toLowerCase().includes(".rtf") ||
+        link.toLowerCase().includes(".odt") ||
+        link.toLowerCase().includes(".ods") ||
+        link.toLowerCase().includes(".odp") ||
+        link.toLowerCase().includes(".epub"))
+  );
+  const isDoc = isPDF || isGoogleDoc || isOfficeDoc || Boolean(
+    contentType && (
+      contentType.includes("doc") ||
+      contentType.includes("pdf") ||
+      contentType.includes("sheet") ||
+      contentType.includes("presentation") ||
+      contentType.includes("text")
+    )
+  );
 
-  const targetUrlForScreenshot = isPDF && isValidUrl
-    ? `https://docs.google.com/viewer?url=${encodeURIComponent(link!)}`
-    : link;
+  const getTargetUrlForScreenshot = (url: string) => {
+    if (isPDF) {
+      return `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+    }
+    if (isGoogleDoc && url.includes("/edit")) {
+      return url.replace(/\/edit.*$/, "/preview");
+    }
+    if (isOfficeDoc) {
+      return `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+    }
+    return url;
+  };
 
-  const screenshotUrl = isValidUrl
-    ? `https://api.microlink.io/?url=${encodeURIComponent(targetUrlForScreenshot!)}&screenshot=true&meta=false&embed=screenshot.url`
-    : null;
+  const getMicrolinkUrl = (url: string) => {
+    const targetUrl = getTargetUrlForScreenshot(url);
+    return `https://api.microlink.io/?url=${encodeURIComponent(targetUrl)}&screenshot=true&screenshot.fullPage=true&viewport.width=1920&viewport.height=1080&meta=false&embed=screenshot.url`;
+  };
+
+  const screenshotUrl = isValidUrl ? getMicrolinkUrl(link!) : null;
 
   const [currentSrc, setCurrentSrc] = React.useState<string | null>(screenshotUrl || image || null);
   const [attemptedScreenshot, setAttemptedScreenshot] = React.useState<boolean>(Boolean(screenshotUrl));
   const [hasFailed, setHasFailed] = React.useState<boolean>(false);
 
   React.useEffect(() => {
-    const targetUrl = isPDF && isValidUrl
-      ? `https://docs.google.com/viewer?url=${encodeURIComponent(link!)}`
-      : link;
-
-    const initialScreenshotUrl = isValidUrl
-      ? `https://api.microlink.io/?url=${encodeURIComponent(targetUrl!)}&screenshot=true&meta=false&embed=screenshot.url`
-      : null;
+    const initialScreenshotUrl = isValidUrl ? getMicrolinkUrl(link!) : null;
 
     setCurrentSrc(initialScreenshotUrl || image || null);
     setAttemptedScreenshot(Boolean(initialScreenshotUrl));
     setHasFailed(false);
-  }, [link, image, isValidUrl, isPDF]);
+  }, [link, image, isValidUrl, isDoc, isPDF]);
 
   const handleError = () => {
     if (attemptedScreenshot && image && currentSrc !== image) {
@@ -459,20 +493,20 @@ const MediaImageWithFallback = ({
     if (isDialog) {
       return (
         <div className="text-zinc-500 font-medium text-xl h-full flex items-center justify-center">
-          {isPDF ? "PDF Document" : "Link"}
+          {isDoc ? "Document" : "Link"}
         </div>
       );
     }
-    if (isPDF) {
+    if (isDoc) {
       return (
         <div className={containerClassName}>
-          <div className="w-full aspect-[1/1.414] max-h-64 bg-gradient-to-br from-red-500/10 via-zinc-900 to-zinc-950 flex flex-col items-center justify-center border-b border-border/50 relative overflow-hidden">
-            <div className="absolute top-2 right-2 px-2 py-0.5 rounded bg-red-500/20 border border-red-500/30 text-[10px] font-bold text-red-400 uppercase tracking-wider">
-              PDF (A4)
+          <div className="w-full h-[340px] aspect-[1/1.414] bg-gradient-to-br from-red-500/10 via-zinc-900 to-zinc-950 flex flex-col items-center justify-center border-b border-border/50 relative overflow-hidden rounded-t-xl">
+            <div className="absolute top-3 right-3 px-2.5 py-1 rounded bg-red-500/20 border border-red-500/30 text-[11px] font-bold text-red-400 uppercase tracking-wider shadow-sm">
+              {isPDF ? "PDF (A4)" : "Document"}
             </div>
-            <FileText className="w-12 h-12 text-red-400/80 mb-2" />
-            <span className="text-xs text-zinc-400 font-medium max-w-[80%] truncate text-center">
-              {title || "PDF Document"}
+            <FileText className="w-14 h-14 text-red-400/80 mb-3" />
+            <span className="text-xs text-zinc-300 font-medium max-w-[80%] truncate text-center">
+              {title || "Document"}
             </span>
           </div>
         </div>
@@ -789,6 +823,32 @@ const LinkCard = ({
         (link.includes(".") && !link.includes(" ") && !link.match(/^[0-9a-fA-F]{8}-/)))
   );
   const isPDF = contentType === 'pdf' || Boolean(link && link.toLowerCase().includes('.pdf'));
+  const isGoogleDoc = Boolean(link && (link.includes("docs.google.com") || link.includes("drive.google.com")));
+  const isOfficeDoc = Boolean(
+    link &&
+      (link.toLowerCase().includes(".doc") ||
+        link.toLowerCase().includes(".docx") ||
+        link.toLowerCase().includes(".ppt") ||
+        link.toLowerCase().includes(".pptx") ||
+        link.toLowerCase().includes(".xls") ||
+        link.toLowerCase().includes(".xlsx") ||
+        link.toLowerCase().includes(".csv") ||
+        link.toLowerCase().includes(".txt") ||
+        link.toLowerCase().includes(".rtf") ||
+        link.toLowerCase().includes(".odt") ||
+        link.toLowerCase().includes(".ods") ||
+        link.toLowerCase().includes(".odp") ||
+        link.toLowerCase().includes(".epub"))
+  );
+  const isDoc = isPDF || isGoogleDoc || isOfficeDoc || Boolean(
+    contentType && (
+      contentType.includes("doc") ||
+      contentType.includes("pdf") ||
+      contentType.includes("sheet") ||
+      contentType.includes("presentation") ||
+      contentType.includes("text")
+    )
+  );
   const isYouTube = contentType === 'youtube' || Boolean(link && (link.includes('youtube.com') || link.includes('youtu.be')));
   const isExplicitNote = contentType === 'note';
   const isExplicitLink = Boolean(contentType && contentType !== 'note');
@@ -970,7 +1030,7 @@ const LinkCard = ({
                         title={title}
                         contentType={contentType}
                         containerClassName={`w-full border-b border-border/50 flex justify-center ${contentType === 'github-profile' ? 'bg-muted/40 py-6' : ''}`}
-                        className={contentType === 'github-profile' ? 'w-24 h-24 object-cover rounded-full shadow-sm ring-4 ring-background' : isPDF ? 'w-full object-cover max-h-64 aspect-[1/1.414] object-top' : 'w-full object-cover max-h-48 aspect-video'}
+                        className={contentType === 'github-profile' ? 'w-24 h-24 object-cover rounded-full shadow-sm ring-4 ring-background' : (isPDF || isDoc) ? 'w-full h-[340px] object-cover object-top rounded-t-xl bg-zinc-950/80' : 'w-full object-cover max-h-48 aspect-video'}
                       />
                     )}
                     <h2 className={`w-full py-2 px-2 text-center justify-center flex items-center`}>
